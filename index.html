@@ -1816,7 +1816,7 @@ let aluFilter='todos',editAluId=null;
 function filterAlumnos(f,el){aluFilter=f;document.querySelectorAll('#page-alumnos .btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderAlumnos();}
 function renderAlumnos(){
   const q=($('alu-search').value||'').toLowerCase();
-  const list=DB.alumnos.filter(a=>(aluFilter==='todos'||a.cat===aluFilter)&&(!q||a.nombre.toLowerCase().includes(q)||(a.tel||'').includes(q)));
+  const list=DB.alumnos.filter(a=>(aluFilter==='todos'||a.cat===aluFilter)&&(!q||a.nombre.toLowerCase().includes(q)||(a.tel||'').includes(q))).sort((a,b)=>{var da=a.fechaRegistro||a.fecha||'';var db=b.fechaRegistro||b.fecha||'';return db.localeCompare(da);});
   $('alu-tbody').innerHTML=list.map((a,i)=>{
     // Buscar grupos en CLASES_LIST
     var grupos = CLASES_LIST.filter(function(g){
