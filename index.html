@@ -1638,29 +1638,35 @@ function sbExportarTodo(){
 // ═══════════════════════════════════════════════════════
 
 function sbCargarAlumnos(){
-  fetch(SB_URL+'/rest/v1/alumnos?select=*&order=created_at.asc',{
+  fetch(SB_URL+'/rest/v1/alumnos?select=*&order=created_at.asc&limit=500',{
     headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
   }).then(function(r){return r.json();}).then(function(rows){
     if(!Array.isArray(rows)||!rows.length) return;
-    var remote=rows.map(function(r){return {
+    // Supabase es la fuente de verdad — reemplaza local completamente
+    DB.alumnos=rows.map(function(r){return {
       id:r.id,nombre:r.nombre,cat:r.cat||'',niv:r.niv||'',dias:r.dias||'',
       hora:r.hora||'',men:r.men||0,ins:r.ins||0,gen:r.gen||'',
       fecha:r.fecha||'',tutor:r.tutor||'',tel:r.tel||'',email:r.email||'',
       est:r.est||'Activo',desc:r.descuento||'',notas:r.notas||'',
       registradoPor:r.registrado_por||'',fechaRegistro:r.fecha_registro||''
     };});
-    // Full merge: remote is source of truth, keep any local-only records too
-    var merged=remote.slice();
-    DB.alumnos.forEach(function(la){
-      if(!merged.find(function(x){return x.id===la.id;})) merged.push(la);
-    });
-    if(merged.length!==DB.alumnos.length||JSON.stringify(merged.map(function(x){return x.id;}))!==JSON.stringify(DB.alumnos.map(function(x){return x.id;}))){
-      DB.alumnos=merged;
-      dbSaveAlumnos();
-      if(typeof renderAlumnos==='function') renderAlumnos();
-      if(typeof renderDashboard==='function') renderDashboard();
-    }
+    dbSaveAlumnos();
+    if(typeof renderAlumnos==='function') renderAlumnos();
+    if(typeof renderDashboard==='function') renderDashboard();
   }).catch(function(e){console.warn('Supabase pull:',e);});
+}
+
+function sbCargarPagos(){
+  fetch(SB_URL+'/rest/v1/pagos?select=*&order=created_at.asc&limit=1000',{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  }).then(function(r){return r.json();}).then(function(rows){
+    if(!Array.isArray(rows)||!rows.length) return;
+    DB.pagos=rows.map(function(r){return {
+      id:r.id,alumno:r.alumno,mes:r.mes,anio:r.anio,
+      men:r.men||0,ins:r.ins||0,desc:r.descuento||0,
+      total:r.total||0,forma:r.forma||'',fecha:r.fecha||'',notas:r.notas||''
+    };});
+  }).catch(function(e){console.warn('Supabase pagos pull:',e);});
 }
 
 function sbCargarPagos(){
