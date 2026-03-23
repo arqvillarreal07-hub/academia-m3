@@ -399,7 +399,9 @@ function saveCosto(){
   <img id="topbar-logo-img" alt="X3" style="height:32px;width:auto;object-fit:contain;border-radius:4px;display:none;">
   <div class="tb-title" id="pageTitle">Dashboard</div>
   <div id="topbar-actions" style="display:flex;gap:8px;align-items:center;margin-left:auto"></div>
-  <button onclick="exportarTodosASheets()" title="Sincronizar todo con Google Sheets" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:5px 10px;color:var(--green);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px" id="btn-sync-all">&#x1F4CA; Sync Sheets</button>
+  <button onclick="exportarJSON()" title="Exportar todos los datos como JSON" style="background:rgba(79,142,247,.15);border:1px solid rgba(79,142,247,.3);border-radius:8px;padding:5px 10px;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer" id="btn-export-json">&#x1F4E4; Exportar</button>
+  <button onclick="importarJSON()" title="Importar datos desde JSON" style="background:rgba(79,142,247,.15);border:1px solid rgba(79,142,247,.3);border-radius:8px;padding:5px 10px;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer" id="btn-import-json">&#x1F4E5; Importar</button>
+  <button onclick="exportarTodosASheets()" title="Sincronizar todo con Google Sheets" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:5px 10px;color:var(--green);font-size:11px;font-weight:700;cursor:pointer" id="btn-sync-all">&#x1F4CA; Sync Sheets</button>
   <div class="tb-chip green" id="statusChip">⏳ Conectando...</div>
   <div class="tb-chip" id="clockChip">—</div>
 </div>
@@ -1457,6 +1459,56 @@ function dbLoadAlumnos(){
 }
 
 
+
+function exportarJSON(){
+  var exportData={
+    alumnos: DB.alumnos,
+    pagos: DB.pagos,
+    egresos: DB.egresos||[],
+    asistencias: DB.asistencias||[],
+    exportado: new Date().toISOString()
+  };
+  var json=JSON.stringify(exportData,null,2);
+  var blob=new Blob([json],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='x3_crm_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Datos exportados: '+DB.alumnos.length+' alumnos, '+DB.pagos.length+' pagos','success');
+}
+
+function importarJSON(){
+  var input=document.createElement('input');
+  input.type='file';
+  input.accept='.json';
+  input.onchange=function(e){
+    var file=e.target.files[0];
+    if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var data=JSON.parse(ev.target.result);
+        if(data.alumnos) DB.alumnos=data.alumnos;
+        if(data.pagos) DB.pagos=data.pagos;
+        if(data.egresos) DB.egresos=data.egresos;
+        if(data.asistencias) DB.asistencias=data.asistencias;
+        dbSaveAlumnos();
+        localStorage.setItem('x3_db_alumnos_v1',JSON.stringify(DB.alumnos));
+        renderAlumnos();
+        renderDashboard();
+        showToast('Importados: '+DB.alumnos.length+' alumnos, '+DB.pagos.length+' pagos','success');
+        // Auto-sync to sheets after import
+        setTimeout(function(){ exportarTodosASheets(); },1000);
+      }catch(err){
+        showToast('Error al importar: '+err.message,'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
 
 function exportarTodosASheets(){
   var btn=document.getElementById('btn-sync-all');
