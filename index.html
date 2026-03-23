@@ -5420,6 +5420,8 @@ if(window._esModoPublico){
   renderDashboard();
   loadData();
   setTimeout(function(){try{renderGrupos();}catch(e){}try{renderPanelClases();}catch(e){}},100);
+  // Sincronizar con Supabase al cargar
+  setTimeout(function(){ iniciarSyncAutomatico(); }, 500);
 }
 // Set logo images
 function applyLogos(){
