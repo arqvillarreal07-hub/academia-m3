@@ -1476,14 +1476,25 @@ function exportarTodosASheets(){
   if(total===0&&btn){btn.textContent='✅ Sin datos';btn.disabled=false;setTimeout(function(){btn.textContent='📊 Sync Sheets';},2000);}
   showToast('Sincronizando '+total+' registros con Google Sheets...','info');
 }
+// URL del Google Apps Script
+var GAS_URL='https://script.google.com/macros/s/AKfycbz42ycz_ER9S92M2nWPbyVQnV7bK9Q2Kke4oaDx0YvxiOl3Ok6TIpxVbKbdehVsB18OgQ/exec';
+
 function syncSheet(fn,data){
   try{
+    // Dentro de GAS: usar google.script.run
     if(typeof google!=='undefined'&&google.script&&google.script.run&&typeof google.script.run[fn]==='function'){
       google.script.run.withSuccessHandler(function(){showSaved();}).withFailureHandler(function(e){console.warn('GAS error:',e);})[fn](JSON.stringify(data));
+      return;
+    }
+    // Desde Netlify/exterior: fetch al endpoint GAS
+    if(GAS_URL){
+      fetch(GAS_URL+'?fn='+encodeURIComponent(fn)+'&data='+encodeURIComponent(JSON.stringify(data)),{
+        method:'GET', mode:'no-cors'
+      }).then(function(){showSaved();}).catch(function(e){console.warn('Sync error:',e);showSaved();});
     } else {
       setTimeout(function(){showSaved();},300);
     }
-  }catch(e){ setTimeout(function(){showSaved();},300); }
+  }catch(e){setTimeout(function(){showSaved();},300);}
 }
 
 var dashPeriodo='mes';
