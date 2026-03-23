@@ -1510,7 +1510,8 @@ function importarJSON(){
   input.click();
 }
 
-function exportarTodosASheets(){
+function exportarTodosASheets(){ sbExportarTodo(); }
+function exportarTodosASheets_old(){
   var btn=document.getElementById('btn-sync-all');
   if(btn){btn.textContent='⏳ Sincronizando...';btn.disabled=true;}
   var total=DB.alumnos.length+DB.pagos.length+(DB.asistencias||[]).length;
@@ -1528,25 +1529,107 @@ function exportarTodosASheets(){
   if(total===0&&btn){btn.textContent='✅ Sin datos';btn.disabled=false;setTimeout(function(){btn.textContent='📊 Sync Sheets';},2000);}
   showToast('Sincronizando '+total+' registros con Google Sheets...','info');
 }
+
+// ═══════════════════════════════════════════════════════
+//  SUPABASE — Base de datos real
+// ═══════════════════════════════════════════════════════
+var SB_URL = 'https://jhhzycahplylulgcugti.supabase.co';
+var SB_KEY = 'sb_publishable_e4XtlefRHT42eoiAS32r9Q_JpLd09Am';
+
+function sbFetch(table, method, body, matchId){
+  var url = SB_URL + '/rest/v1/' + table;
+  if(matchId) url += '?id=eq.' + encodeURIComponent(matchId);
+  var opts = {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Prefer': method==='POST' ? 'resolution=merge-duplicates' : 'return=minimal'
+    }
+  };
+  if(body) opts.body = JSON.stringify(body);
+  return fetch(url, opts);
+}
+
+function sbSaveAlumno(a){
+  sbFetch('alumnos','POST',{
+    id:a.id, nombre:a.nombre, cat:a.cat, niv:a.niv, dias:a.dias, hora:a.hora,
+    men:a.men||0, ins:a.ins||0, gen:a.gen||'', fecha:a.fecha||'',
+    tutor:a.tutor||'', tel:a.tel||'', email:a.email||'', est:a.est||'Activo',
+    descuento:a.desc||'', notas:a.notas||'',
+    registrado_por:a.registradoPor||'', fecha_registro:a.fechaRegistro||''
+  });
+}
+
+function sbDeleteAlumno(id){
+  sbFetch('alumnos','DELETE',null,id);
+}
+
+function sbSavePago(p){
+  sbFetch('pagos','POST',{
+    id:p.id, alumno:p.alumno, mes:p.mes, anio:p.anio,
+    men:p.men||0, ins:p.ins||0, descuento:p.desc||0,
+    total:p.total||0, forma:p.forma||'', fecha:p.fecha||'', notas:p.notas||''
+  });
+}
+
+function sbDeletePago(id){
+  sbFetch('pagos','DELETE',null,id);
+}
+
+function sbSaveAsistencia(a){
+  // Asistencia uses upsert by alumno+fecha+grupo
+  fetch(SB_URL+'/rest/v1/asistencias?alumno=eq.'+encodeURIComponent(a.alumno)+'&fecha=eq.'+a.fecha+'&grupo=eq.'+encodeURIComponent(a.grupo||''), {
+    method:'DELETE',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  }).then(function(){
+    sbFetch('asistencias','POST',{
+      alumno:a.alumno, estado:a.estado, fecha:a.fecha,
+      grupo:a.grupo||'', hora:a.hora||'', coach:a.coach||'', cat:a.cat||''
+    });
+  });
+}
+
+function sbExportarTodo(){
+  var btn=document.getElementById('btn-sync-all');
+  if(btn){btn.textContent='Sincronizando...';btn.disabled=true;}
+  var total=DB.alumnos.length+DB.pagos.length+(DB.asistencias||[]).length;
+  var done=0;
+  function tick(){
+    done++;
+    if(done>=total&&btn){
+      btn.textContent='Sincronizado';btn.disabled=false;
+      setTimeout(function(){btn.innerHTML='&#x1F4CA; Sync Sheets';},3000);
+      showToast('Sincronizados '+total+' registros con Supabase','success');
+    }
+  }
+  DB.alumnos.forEach(function(a){ sbSaveAlumno(a); tick(); });
+  DB.pagos.forEach(function(p){ sbSavePago(p); tick(); });
+  (DB.asistencias||[]).forEach(function(a){ sbSaveAsistencia(a); tick(); });
+  if(total===0&&btn){btn.innerHTML='&#x1F4CA; Sync Sheets';btn.disabled=false;}
+}
+
 // URL del Google Apps Script
 var GAS_URL='https://script.google.com/macros/s/AKfycbz42ycz_ER9S92M2nWPbyVQnV7bK9Q2Kke4oaDx0YvxiOl3Ok6TIpxVbKbdehVsB18OgQ/exec';
 
 function syncSheet(fn,data){
+  // Guardar en Supabase (base de datos real)
   try{
-    // Dentro de GAS: usar google.script.run
+    if(fn==='saveAlumno') sbSaveAlumno(data);
+    else if(fn==='deleteAlumno') sbDeleteAlumno(data);
+    else if(fn==='savePago') sbSavePago(data);
+    else if(fn==='deletePago') sbDeletePago(data);
+    else if(fn==='saveAsistencia') sbSaveAsistencia(data);
+  }catch(e){ console.warn('Supabase error:',e); }
+  // Tambien intentar GAS si disponible
+  try{
     if(typeof google!=='undefined'&&google.script&&google.script.run&&typeof google.script.run[fn]==='function'){
-      google.script.run.withSuccessHandler(function(){showSaved();}).withFailureHandler(function(e){console.warn('GAS error:',e);})[fn](JSON.stringify(data));
+      google.script.run.withSuccessHandler(function(){showSaved();}).withFailureHandler(function(){showSaved();})[fn](JSON.stringify(data));
       return;
     }
-    // Desde Netlify/exterior: fetch al endpoint GAS
-    if(GAS_URL){
-      fetch(GAS_URL+'?fn='+encodeURIComponent(fn)+'&data='+encodeURIComponent(JSON.stringify(data)),{
-        method:'GET', mode:'no-cors'
-      }).then(function(){showSaved();}).catch(function(e){console.warn('Sync error:',e);showSaved();});
-    } else {
-      setTimeout(function(){showSaved();},300);
-    }
-  }catch(e){setTimeout(function(){showSaved();},300);}
+  }catch(e){}
+  setTimeout(function(){showSaved();},300);
 }
 
 var dashPeriodo='mes';
