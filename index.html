@@ -1555,12 +1555,26 @@ function sbFetch(table, method, body, matchId){
 }
 
 function sbSaveAlumno(a){
+  // Normalize: handle both lowercase (DB) and uppercase (syncSheet) keys
   sbFetch('alumnos','POST',{
-    id:a.id, nombre:a.nombre, cat:a.cat, niv:a.niv, dias:a.dias, hora:a.hora,
-    men:a.men||0, ins:a.ins||0, gen:a.gen||'', fecha:a.fecha||'',
-    tutor:a.tutor||'', tel:a.tel||'', email:a.email||'', est:a.est||'Activo',
-    descuento:a.desc||'', notas:a.notas||'',
-    registrado_por:a.registradoPor||'', fecha_registro:a.fechaRegistro||''
+    id:a.id||a.ID,
+    nombre:a.nombre||a.Nombre||'',
+    cat:a.cat||a.Categoria||'',
+    niv:a.niv||a.Nivel||'',
+    dias:a.dias||a.Dias||'',
+    hora:a.hora||a.Hora||'',
+    men:a.men||a.Mensualidad||0,
+    ins:a.ins||a.Inscripcion||0,
+    gen:a.gen||a.Genero||'',
+    fecha:a.fecha||a.FechaIngreso||'',
+    tutor:a.tutor||a.Tutor||'',
+    tel:a.tel||a.Telefono||'',
+    email:a.email||a.Email||'',
+    est:a.est||a.Estatus||'Activo',
+    descuento:a.desc||a.Descuento||'',
+    notas:a.notas||a.Notas||'',
+    registrado_por:a.registradoPor||a.RegistradoPor||'',
+    fecha_registro:a.fechaRegistro||a.FechaRegistro||''
   });
 }
 
@@ -1570,9 +1584,17 @@ function sbDeleteAlumno(id){
 
 function sbSavePago(p){
   sbFetch('pagos','POST',{
-    id:p.id, alumno:p.alumno, mes:p.mes, anio:p.anio,
-    men:p.men||0, ins:p.ins||0, descuento:p.desc||0,
-    total:p.total||0, forma:p.forma||'', fecha:p.fecha||'', notas:p.notas||''
+    id:p.id||p.ID,
+    alumno:p.alumno||p.Alumno||'',
+    mes:p.mes||p.Mes||'',
+    anio:p.anio||p.Anio||0,
+    men:p.men||p.Mensualidad||0,
+    ins:p.ins||p.Inscripcion||0,
+    descuento:p.desc||p.Descuento||0,
+    total:p.total||p.Total||0,
+    forma:p.forma||p.FormaPago||'',
+    fecha:p.fecha||p.Fecha||'',
+    notas:p.notas||p.Notas||''
   });
 }
 
