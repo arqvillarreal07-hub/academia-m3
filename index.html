@@ -1610,6 +1610,65 @@ function sbExportarTodo(){
   if(total===0&&btn){btn.innerHTML='&#x1F4CA; Sync Sheets';btn.disabled=false;}
 }
 
+// ═══════════════════════════════════════════════════════
+//  SUPABASE — Sincronización automática en tiempo real
+// ═══════════════════════════════════════════════════════
+
+function sbCargarAlumnos(){
+  fetch(SB_URL+'/rest/v1/alumnos?select=*&order=created_at.asc',{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  }).then(function(r){return r.json();}).then(function(rows){
+    if(!Array.isArray(rows)||rows.length===0) return;
+    var remote = rows.map(function(r){return {
+      id:r.id, nombre:r.nombre, cat:r.cat||'', niv:r.niv||'', dias:r.dias||'',
+      hora:r.hora||'', men:r.men||0, ins:r.ins||0, gen:r.gen||'',
+      fecha:r.fecha||'', tutor:r.tutor||'', tel:r.tel||'', email:r.email||'',
+      est:r.est||'Activo', desc:r.descuento||'', notas:r.notas||'',
+      registradoPor:r.registrado_por||'', fechaRegistro:r.fecha_registro||''
+    };});
+    // Merge: keep local changes, add remote ones
+    var localIds = DB.alumnos.map(function(a){return a.id;});
+    var remoteIds = remote.map(function(a){return a.id;});
+    // Add remote alumnos not in local
+    remote.forEach(function(ra){
+      var localIdx = DB.alumnos.findIndex(function(a){return a.id===ra.id;});
+      if(localIdx===-1){
+        DB.alumnos.push(ra);
+      }
+    });
+    dbSaveAlumnos();
+    if(typeof renderAlumnos==='function') renderAlumnos();
+    if(typeof renderDashboard==='function') renderDashboard();
+  }).catch(function(e){console.warn('Supabase pull error:',e);});
+}
+
+function sbCargarPagos(){
+  fetch(SB_URL+'/rest/v1/pagos?select=*&order=created_at.asc',{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  }).then(function(r){return r.json();}).then(function(rows){
+    if(!Array.isArray(rows)||rows.length===0) return;
+    var remote = rows.map(function(r){return {
+      id:r.id, alumno:r.alumno, mes:r.mes, anio:r.anio,
+      men:r.men||0, ins:r.ins||0, desc:r.descuento||0,
+      total:r.total||0, forma:r.forma||'', fecha:r.fecha||'', notas:r.notas||''
+    };});
+    remote.forEach(function(rp){
+      var idx=DB.pagos.findIndex(function(p){return p.id===rp.id;});
+      if(idx===-1) DB.pagos.push(rp);
+    });
+  }).catch(function(e){console.warn('Supabase pagos pull error:',e);});
+}
+
+// Sincronizar desde Supabase al cargar y cada 15 segundos
+function iniciarSyncAutomatico(){
+  sbCargarAlumnos();
+  sbCargarPagos();
+  setInterval(function(){
+    sbCargarAlumnos();
+    sbCargarPagos();
+  }, 15000);
+}
+
 // URL del Google Apps Script
 var GAS_URL='https://script.google.com/macros/s/AKfycbz42ycz_ER9S92M2nWPbyVQnV7bK9Q2Kke4oaDx0YvxiOl3Ok6TIpxVbKbdehVsB18OgQ/exec';
 
@@ -4871,7 +4930,8 @@ function importarAlumnos(){
         }
       }
       showToast(nuevos+' nuevos, '+actualizados+' actualizados','success');
-      dbLoadAlumnos(); loadGruposNuevos(); loadClasesList(); renderDashboard(); renderPagos(); try{renderGrupos();}catch(e){}
+      dbLoadAlumnos();
+  iniciarSyncAutomatico(); loadGruposNuevos(); loadClasesList(); renderDashboard(); renderPagos(); try{renderGrupos();}catch(e){}
     };
     reader.readAsText(file,'UTF-8');
   };
