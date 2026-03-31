@@ -17,8 +17,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .topbar{background:rgba(8,12,24,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .content{flex:1;overflow-y:auto;padding:20px 24px;}
 .page{display:none;animation:fadeIn .2s ease;}.page.active{display:block;}#prospectos-list tr.ptr:hover{background:var(--s2)!important}
-#page-inscripcion.active,#page-usuarios.active,#page-planeacion.active,#page-grupos.active,#page-padelday.active,#page-crm.active,#page-alumnos.active,#page-pagos.active,#page-historial.active,#page-costos.active,#page-finanzas.active{position:fixed;left:220px;top:53px;right:0;bottom:0;overflow-y:auto;background:var(--bg);z-index:50;padding:20px;}
-@media(max-width:768px){#page-inscripcion.active,#page-usuarios.active,#page-planeacion.active,#page-grupos.active,#page-padelday.active,#page-crm.active,#page-alumnos.active,#page-pagos.active,#page-historial.active,#page-costos.active,#page-finanzas.active{left:0;top:56px;bottom:70px;padding:14px 12px 80px;}}
+#page-inscripcion.active,#page-usuarios.active,#page-planeacion.active,#page-grupos.active,#page-padelday.active,#page-crm.active,#page-alumnos.active,#page-pagos.active,#page-historial.active,#page-costos.active,#page-finanzas.active,#page-evaluaciones.active{position:fixed;left:220px;top:53px;right:0;bottom:0;overflow-y:auto;background:var(--bg);z-index:50;padding:20px;}
+@media(max-width:768px){#page-inscripcion.active,#page-usuarios.active,#page-planeacion.active,#page-grupos.active,#page-padelday.active,#page-crm.active,#page-alumnos.active,#page-pagos.active,#page-historial.active,#page-costos.active,#page-finanzas.active,#page-evaluaciones.active{left:0;top:56px;bottom:70px;padding:14px 12px 80px;}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .usr-card{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:14px;transition:.2s;cursor:pointer;}
 .usr-card:hover{border-color:var(--acc);box-shadow:0 0 0 1px rgba(79,142,247,.3);}
@@ -385,6 +385,7 @@ function saveCosto(){
     <div class="nav-sec">Más</div>
     <div class="ni" onclick="nav('prospectos',this)"><span class="ico">🌟</span>Prospectos <span id="pros-badge" style="display:none;background:#ffc800;color:#000;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:800;margin-left:4px">0</span></div>
     <div class="ni" onclick="nav('inscripcion',this)"><span class="ico">✏️</span>Nueva Inscripción</div>
+    <div class="ni" onclick="nav('evaluaciones',this)"><span class="ico">📝</span>Evaluaciones</div>
     <div class="ni" onclick="nav('padelday',this)"><span class="ico">🏆</span>Pádel Day</div>
     <div class="ni" onclick="nav('usuarios',this)"><span class="ico">👤</span>Usuarios</div>
   </nav>
@@ -1074,6 +1075,119 @@ function saveCosto(){
 </div>
 
 
+<!-- ══════════ PAGE: EVALUACIONES ══════════ -->
+<div class="page" id="page-evaluaciones">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+    <div>
+      <div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;margin-bottom:2px">📝 Centro de Evaluaciones</div>
+      <div style="font-size:12px;color:var(--muted2)">Sistema de evaluación por categoría · Academia M3 / X3 Pádel</div>
+    </div>
+  </div>
+
+  <!-- Tabs: Nueva Evaluación | Historial | Avance -->
+  <div style="display:flex;gap:4px;background:var(--s2);border-radius:12px;padding:4px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="ev-tab active" onclick="evTab('nueva')" id="ev-tab-nueva" style="flex:1;padding:9px 8px;font-size:12px;font-weight:700;border:none;border-radius:9px;cursor:pointer;font-family:inherit;background:var(--acc);color:#000;min-width:90px">⭐ Nueva Evaluación</button>
+    <button class="ev-tab" onclick="evTab('historial')" id="ev-tab-historial" style="flex:1;padding:9px 8px;font-size:12px;font-weight:700;border:none;border-radius:9px;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted2);min-width:90px">📋 Historial</button>
+    <button class="ev-tab" onclick="evTab('avance')" id="ev-tab-avance" style="flex:1;padding:9px 8px;font-size:12px;font-weight:700;border:none;border-radius:9px;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted2);min-width:90px">📈 Avance</button>
+  </div>
+
+  <!-- ─── TAB: NUEVA EVALUACIÓN ─── -->
+  <div id="ev-content-nueva">
+
+    <!-- Selector de alumno, coach, fecha -->
+    <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Datos de la evaluación</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Alumno</label>
+          <select id="ev-alumno" onchange="evCargarAlumno()" style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;outline:none;-webkit-appearance:none">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Coach evaluador</label>
+          <select id="ev-coach" style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;outline:none;-webkit-appearance:none">
+            <option value="Carlos">Carlos</option>
+            <option value="Pedro">Pedro</option>
+            <option value="Daniela">Daniela</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Fecha</label>
+          <input type="date" id="ev-fecha" style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;outline:none;box-sizing:border-box">
+        </div>
+      </div>
+      <div id="ev-alumno-info"></div>
+    </div>
+
+    <!-- Rúbrica de evaluación con estrellas/trofeos -->
+    <div id="ev-rubrica-body">
+      <div style="text-align:center;padding:40px;color:var(--muted2);font-size:12px">Selecciona un alumno para comenzar la evaluación</div>
+    </div>
+
+    <!-- Observaciones y botones -->
+    <div id="ev-form-bottom" style="display:none">
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Observaciones generales</div>
+        <textarea id="ev-observaciones" rows="3" placeholder="Logros del período, áreas de mejora, recomendaciones para papás..." style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;resize:none;box-sizing:border-box;font-family:inherit"></textarea>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+          <label style="font-size:11px;color:var(--muted2)">¿Listo para subir de nivel?</label>
+          <select id="ev-subenivel" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;outline:none">
+            <option value="no">No aún — necesita más práctica</option>
+            <option value="casi">Casi — 1-2 meses más</option>
+            <option value="si">Sí — recomendar cambio de grupo</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="evGuardar()" style="flex:1;padding:12px;background:var(--acc);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">💾 Guardar Evaluación</button>
+        <button onclick="evGuardarYPDF()" style="flex:1;padding:12px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">📄 Guardar + Descargar PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: HISTORIAL ─── -->
+  <div id="ev-content-historial" style="display:none">
+    <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Filtrar por alumno</label>
+          <select id="ev-hist-alumno" onchange="evRenderHistorial()" style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;outline:none;-webkit-appearance:none">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Filtrar por categoría</label>
+          <select id="ev-hist-cat" onchange="evRenderHistorial()" style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;outline:none">
+            <option value="">Todas</option>
+            <option value="Infantil">Infantil</option>
+            <option value="Juvenil">Juvenil</option>
+            <option value="Adulto">Adulto</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="ev-hist-list"></div>
+  </div>
+
+  <!-- ─── TAB: AVANCE ─── -->
+  <div id="ev-content-avance" style="display:none">
+    <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px">Seleccionar alumno</label>
+      <select id="ev-avance-alumno" onchange="evRenderAvance()" style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;outline:none;-webkit-appearance:none;max-width:300px">
+        <option value="">— Seleccionar —</option>
+      </select>
+    </div>
+    <div id="ev-avance-body">
+      <div style="text-align:center;padding:40px;color:var(--muted2);font-size:12px">Selecciona un alumno para ver su avance</div>
+    </div>
+  </div>
+
+</div><!-- /page-evaluaciones -->
+
+
 <!-- ══════════ PAGE: PÁDEL DAY ══════════ -->
 <div class="page" id="page-padelday">
 
@@ -1319,7 +1433,7 @@ function nav(page,el){
   $('page-'+page).classList.add('active');
   var cEl=document.querySelector('.content');if(cEl)cEl.scrollTop=0;
   if(el)el.classList.add('active');
-  const T={dashboard:'Dashboard',dia:'📋 Panel del Día',alumnos:'Alumnos',pagos:'Control de Pagos',historial:'Historial de Pagos',horarios:'Horarios',calendario:'Calendario',finanzas:'Ingresos & Egresos',costos:'Costos & Mensualidades',crm:'CRM -- Base de Alumnos',inscripcion:'Nueva Inscripción',usuarios:'Gestión de Usuarios'};
+  const T={dashboard:'Dashboard',dia:'📋 Panel del Día',alumnos:'Alumnos',pagos:'Control de Pagos',historial:'Historial de Pagos',horarios:'Horarios',calendario:'Calendario',finanzas:'Ingresos & Egresos',costos:'Costos & Mensualidades',crm:'CRM -- Base de Alumnos',inscripcion:'Nueva Inscripción',usuarios:'Gestión de Usuarios',evaluaciones:'📝 Evaluaciones'};
   $('pageTitle').textContent=T[page]||page;
   // Botones contextuales en topbar
   var tbAct=$('topbar-actions');
@@ -5690,6 +5804,7 @@ window.addEventListener('load', applyLogos);
     <div class="more-item" onclick="navMob('padelday')"><span class="mi-ico">🏆</span><span class="mi-lbl">Pádel Day</span></div>
     <div class="more-item" onclick="navMob('grupos')"><span class="mi-ico">👥</span><span class="mi-lbl">Mis Grupos</span></div>
     <div class="more-item" onclick="navMob('planeacion')"><span class="mi-ico">🎾</span><span class="mi-lbl">Academia</span></div>
+    <div class="more-item" onclick="navMob('evaluaciones')"><span class="mi-ico">📝</span><span class="mi-lbl">Evaluaciones</span></div>
     <div class="more-item" onclick="navMob('historial')"><span class="mi-ico">📜</span><span class="mi-lbl">Historial</span></div>
     <div class="more-item" onclick="navMob('finanzas')"><span class="mi-ico">📈</span><span class="mi-lbl">Finanzas</span></div>
     <div class="more-item" onclick="navMob('costos')"><span class="mi-ico">💲</span><span class="mi-lbl">Costos</span></div>
@@ -7228,5 +7343,690 @@ function confirmarImportarWA(){
     </div>
   </div>
 </div>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SISTEMA DE EVALUACIONES PROFESIONAL
+//  Estrellas/Trofeos + PDF membretado + Historial de avance
+// ═══════════════════════════════════════════════════════════
+
+var EV_STORAGE_KEY = 'x3_evaluaciones_pro_v2';
+
+// ── RÚBRICA POR CATEGORÍA (basado en metodologías de clubes FIP/FEP) ──
+var EV_RUBRICA = {
+  Infantil: {
+    titulo: 'Evaluación Infantil',
+    icono: '🏆',
+    tipo: 'estrellas', // estrellas para infantil
+    areas: [
+      { id:'agarre', area:'Fundamentos Técnicos', nombre:'Agarre de la pala', desc:'Sostiene la pala con agarre continental correcto' },
+      { id:'postura', area:'Fundamentos Técnicos', nombre:'Posición de espera', desc:'Rodillas flexionadas, peso en la parte delantera del pie' },
+      { id:'derecha', area:'Fundamentos Técnicos', nombre:'Golpe de derecha', desc:'Contacto limpio, seguimiento del golpe' },
+      { id:'reves', area:'Fundamentos Técnicos', nombre:'Golpe de revés', desc:'Giro de hombros, control del punto de impacto' },
+      { id:'voleo', area:'Fundamentos Técnicos', nombre:'Voleo básico', desc:'Mano firme, empuje hacia adelante sin balanceo' },
+      { id:'saque', area:'Fundamentos Técnicos', nombre:'Servicio', desc:'Lanza la pelota correctamente, contacto a la altura de la cadera' },
+      { id:'desplaz', area:'Motricidad y Coordinación', nombre:'Desplazamiento lateral', desc:'Se mueve con pasos laterales sin cruzar los pies' },
+      { id:'reaccion', area:'Motricidad y Coordinación', nombre:'Tiempo de reacción', desc:'Reacciona al estímulo en menos de 1 segundo' },
+      { id:'coord', area:'Motricidad y Coordinación', nombre:'Coordinación ojo-mano', desc:'Conecta el golpe en el punto correcto con consistencia' },
+      { id:'poscancha', area:'Juego y Táctica', nombre:'Posición en cancha', desc:'Ocupa su lado correctamente durante el punto' },
+      { id:'comunica', area:'Juego y Táctica', nombre:'Comunicación con pareja', desc:'Avisa "mía" / "tuya" durante el juego' },
+      { id:'actitud', area:'Actitud y Comportamiento', nombre:'Actitud deportiva', desc:'Respeta reglas, al rival y al coach' },
+      { id:'esfuerzo', area:'Actitud y Comportamiento', nombre:'Esfuerzo y constancia', desc:'Se mantiene enfocado toda la clase' },
+      { id:'diversion', area:'Actitud y Comportamiento', nombre:'Disfruta el deporte', desc:'Participa con entusiasmo y energía positiva' }
+    ]
+  },
+  Juvenil: {
+    titulo: 'Evaluación Juvenil',
+    icono: '🎾',
+    tipo: 'estrellas',
+    areas: [
+      { id:'j_derecha', area:'Técnica', nombre:'Derecha de fondo', desc:'Consistencia y dirección en rally' },
+      { id:'j_reves', area:'Técnica', nombre:'Revés de fondo', desc:'Control y profundidad del golpe' },
+      { id:'j_voleo', area:'Técnica', nombre:'Voleo derecha/revés', desc:'Firmeza y colocación en la red' },
+      { id:'j_bandeja', area:'Técnica', nombre:'Bandeja', desc:'No pierde la red, control de profundidad' },
+      { id:'j_vibora', area:'Técnica', nombre:'Víbora (intro)', desc:'Movimiento correcto del brazo, efecto lateral' },
+      { id:'j_pared', area:'Técnica', nombre:'Juego de paredes', desc:'Lectura de rebote lateral y de fondo' },
+      { id:'j_saque', area:'Técnica', nombre:'Servicio con efecto', desc:'Primer saque con slice, precisión' },
+      { id:'j_posred', area:'Táctica', nombre:'Control de red', desc:'Mantiene la posición de red ganada' },
+      { id:'j_salida', area:'Táctica', nombre:'Salida de red ante globo', desc:'Recupera posición sin regalar el punto' },
+      { id:'j_patron', area:'Táctica', nombre:'Patrones de juego', desc:'Aplica secuencias aprendidas (fondo→red)' },
+      { id:'j_fisico', area:'Físico', nombre:'Resistencia en pista', desc:'Mantiene nivel durante todo el set' },
+      { id:'j_agil', area:'Físico', nombre:'Agilidad y explosividad', desc:'Cambios de dirección rápidos y efectivos' },
+      { id:'j_mental', area:'Mental', nombre:'Gestión emocional', desc:'Controla frustración, mantiene foco' },
+      { id:'j_compet', area:'Mental', nombre:'Mentalidad competitiva', desc:'Lucha cada punto hasta el final' }
+    ]
+  },
+  Adulto: {
+    titulo: 'Evaluación Adulto',
+    icono: '🏅',
+    tipo: 'estrellas',
+    areas: [
+      { id:'a_fondo', area:'Técnica', nombre:'Golpes de fondo', desc:'Consistencia, profundidad y variación' },
+      { id:'a_red', area:'Técnica', nombre:'Juego de red', desc:'Voleo, bandeja y víbora con dirección' },
+      { id:'a_paredes', area:'Técnica', nombre:'Lectura de paredes', desc:'Rebotes laterales, fondo y doble pared' },
+      { id:'a_smash', area:'Técnica', nombre:'Remates', desc:'Smash, x3, globo ofensivo' },
+      { id:'a_saque', area:'Técnica', nombre:'Servicio', desc:'Variedad de saques, colocación y efecto' },
+      { id:'a_tactica', area:'Táctica', nombre:'Visión de juego', desc:'Lee las situaciones y toma buenas decisiones' },
+      { id:'a_pareja', area:'Táctica', nombre:'Juego en pareja', desc:'Comunicación, cobertura del centro, movimiento conjunto' },
+      { id:'a_transic', area:'Táctica', nombre:'Transiciones', desc:'Aprovecha para subir a red, defiende bajando con globo' },
+      { id:'a_fisico', area:'Físico', nombre:'Condición física', desc:'Mantiene intensidad durante el match' },
+      { id:'a_mental', area:'Mental', nombre:'Control emocional', desc:'Gestiona presión en puntos importantes' }
+    ]
+  }
+};
+
+// ── Detectar categoría del alumno ──
+function evDetectarCat(nombre) {
+  var grupos = (typeof CLASES_LIST !== 'undefined' ? CLASES_LIST : []).filter(function(g){
+    return (g.alumnos||[]).indexOf(nombre) !== -1;
+  });
+  if (!grupos.length) {
+    var alumno = DB.alumnos.find(function(a){ return a.nombre === nombre; });
+    if (alumno && alumno.cat) return alumno.cat;
+    return 'Infantil';
+  }
+  var cat = grupos[0].cat || '';
+  if (/infantil/i.test(cat)) return 'Infantil';
+  if (/juvenil/i.test(cat)) return 'Juvenil';
+  return 'Adulto';
+}
+
+// ── Tabs ──
+function evTab(tab) {
+  ['nueva','historial','avance'].forEach(function(t){
+    var btn = document.getElementById('ev-tab-'+t);
+    var content = document.getElementById('ev-content-'+t);
+    if (btn) { btn.style.background = t===tab ? 'var(--acc)' : 'transparent'; btn.style.color = t===tab ? '#000' : 'var(--muted2)'; }
+    if (content) content.style.display = t===tab ? '' : 'none';
+  });
+  if (tab==='historial') evRenderHistorial();
+  if (tab==='avance') evPoblarAvanceSel();
+}
+
+// ── Poblar selectores ──
+function evPoblarSelectores() {
+  var nombres = [];
+  if (typeof CLASES_LIST !== 'undefined') {
+    CLASES_LIST.forEach(function(g){ (g.alumnos||[]).forEach(function(n){ if(nombres.indexOf(n)===-1) nombres.push(n); }); });
+  }
+  if (typeof DB !== 'undefined' && DB.alumnos) {
+    DB.alumnos.forEach(function(a){ if(nombres.indexOf(a.nombre)===-1) nombres.push(a.nombre); });
+  }
+  nombres.sort();
+
+  ['ev-alumno','ev-hist-alumno','ev-avance-alumno'].forEach(function(selId){
+    var sel = document.getElementById(selId);
+    if (!sel || sel.options.length > 1) return;
+    nombres.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  });
+
+  var fi = document.getElementById('ev-fecha');
+  if (fi && !fi.value) {
+    var hoy = new Date();
+    fi.value = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
+  }
+}
+
+function evPoblarAvanceSel() {
+  var sel = document.getElementById('ev-avance-alumno');
+  if (!sel || sel.options.length > 1) return;
+  var nombres = [];
+  evLoadAll().forEach(function(e){ if(nombres.indexOf(e.alumno)===-1) nombres.push(e.alumno); });
+  nombres.sort().forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+}
+
+// ── Cargar alumno y mostrar rúbrica con estrellas ──
+function evCargarAlumno() {
+  var nombre = (document.getElementById('ev-alumno')||{}).value||'';
+  if (!nombre) return;
+
+  var cat = evDetectarCat(nombre);
+  var rubrica = EV_RUBRICA[cat];
+  if (!rubrica) return;
+
+  // Info del alumno
+  var infoEl = document.getElementById('ev-alumno-info');
+  if (infoEl) {
+    var grupos = (typeof CLASES_LIST !== 'undefined' ? CLASES_LIST : []).filter(function(g){ return (g.alumnos||[]).indexOf(nombre) !== -1; });
+    infoEl.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">'
+      +'<span style="font-size:11px;background:rgba(79,142,247,.1);border-radius:6px;padding:4px 8px;color:var(--acc);font-weight:700">'+rubrica.icono+' '+cat+'</span>'
+      +(grupos.length?'<span style="font-size:11px;background:var(--s2);border-radius:6px;padding:4px 8px;color:var(--muted2)">'+grupos[0].nivel+'</span>':'')
+      +(grupos.length?'<span style="font-size:11px;background:var(--s2);border-radius:6px;padding:4px 8px;color:var(--muted2)">Coach: '+grupos[0].coach+'</span>':'')
+      +'</div>';
+  }
+
+  // Agrupar por área
+  var areasMap = {};
+  rubrica.areas.forEach(function(item){
+    if (!areasMap[item.area]) areasMap[item.area] = [];
+    areasMap[item.area].push(item);
+  });
+
+  var AREA_COLORS = {
+    'Fundamentos Técnicos':'var(--acc)', 'Técnica':'var(--acc)',
+    'Motricidad y Coordinación':'var(--green)', 'Físico':'var(--green)',
+    'Juego y Táctica':'var(--acc2)', 'Táctica':'var(--acc2)',
+    'Actitud y Comportamiento':'var(--orange)', 'Mental':'var(--orange)'
+  };
+  var AREA_ICONS = {
+    'Fundamentos Técnicos':'🎯', 'Técnica':'🎯',
+    'Motricidad y Coordinación':'🏃', 'Físico':'💪',
+    'Juego y Táctica':'🧠', 'Táctica':'🧠',
+    'Actitud y Comportamiento':'⭐', 'Mental':'🧘'
+  };
+
+  var html = '';
+  var areaNames = Object.keys(areasMap);
+  areaNames.forEach(function(areaName){
+    var items = areasMap[areaName];
+    var col = AREA_COLORS[areaName] || 'var(--acc)';
+    var ico = AREA_ICONS[areaName] || '📋';
+
+    html += '<div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px">';
+    html += '<div style="font-size:11px;font-weight:800;color:'+col+';letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">'+ico+' '+areaName+'</div>';
+
+    items.forEach(function(item){
+      html += '<div style="background:var(--s2);border-radius:10px;padding:10px 12px;margin-bottom:6px">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">';
+      html += '<div style="flex:1;min-width:150px">';
+      html += '<div style="font-size:12.5px;font-weight:700;margin-bottom:2px">'+item.nombre+'</div>';
+      html += '<div style="font-size:10px;color:var(--muted2)">'+item.desc+'</div>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:3px;flex-shrink:0" id="ev-stars-'+item.id+'">';
+
+      // Generar 5 estrellas/trofeos
+      var symbol = cat==='Infantil' ? '🏆' : '⭐';
+      for (var s=1; s<=5; s++) {
+        html += '<button data-item="'+item.id+'" data-score="'+s+'" onclick="evSetStar(\''+item.id+'\','+s+')" ';
+        html += 'style="width:32px;height:32px;border-radius:8px;border:1.5px solid var(--border);background:var(--s3);font-size:16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;padding:0">';
+        html += '<span style="opacity:0.3">'+symbol+'</span></button>';
+      }
+
+      html += '</div></div></div>';
+    });
+
+    html += '</div>';
+  });
+
+  var body = document.getElementById('ev-rubrica-body');
+  if (body) body.innerHTML = html;
+  var bot = document.getElementById('ev-form-bottom');
+  if (bot) bot.style.display = '';
+}
+
+// ── Set star/trophy rating ──
+function evSetStar(itemId, score) {
+  var container = document.getElementById('ev-stars-'+itemId);
+  if (!container) return;
+  var btns = container.querySelectorAll('button');
+  var alumno = (document.getElementById('ev-alumno')||{}).value||'';
+  var cat = evDetectarCat(alumno);
+  var symbol = cat==='Infantil' ? '🏆' : '⭐';
+  var emptySymbol = cat==='Infantil' ? '🏆' : '⭐';
+
+  btns.forEach(function(btn, i){
+    var filled = (i < score);
+    btn.querySelector('span').style.opacity = filled ? '1' : '0.3';
+    btn.style.background = filled ? 'rgba(245,158,11,.15)' : 'var(--s3)';
+    btn.style.borderColor = filled ? 'rgba(245,158,11,.4)' : 'var(--border)';
+    btn.style.transform = filled ? 'scale(1.1)' : 'scale(1)';
+  });
+  container._score = score;
+}
+
+// ── Storage ──
+function evLoadAll() { try { return JSON.parse(localStorage.getItem(EV_STORAGE_KEY)||'[]'); } catch(e){ return []; } }
+function evSaveAll(arr) { try { localStorage.setItem(EV_STORAGE_KEY, JSON.stringify(arr)); } catch(e){} }
+
+// ── Recolectar scores de las estrellas ──
+function evRecolectarScores() {
+  var alumno = (document.getElementById('ev-alumno')||{}).value||'';
+  var cat = evDetectarCat(alumno);
+  var rubrica = EV_RUBRICA[cat];
+  if (!rubrica) return null;
+
+  var scores = {};
+  var total = 0, count = 0;
+  rubrica.areas.forEach(function(item){
+    var cont = document.getElementById('ev-stars-'+item.id);
+    var s = cont ? (cont._score || 0) : 0;
+    scores[item.id] = s;
+    if (s > 0) { total += s; count++; }
+  });
+
+  return { scores: scores, promedio: count > 0 ? (total/count) : 0, total: total, count: count };
+}
+
+// ── Guardar evaluación ──
+function evGuardar() {
+  var alumno = (document.getElementById('ev-alumno')||{}).value||'';
+  var coach = (document.getElementById('ev-coach')||{}).value||'';
+  var fecha = (document.getElementById('ev-fecha')||{}).value||'';
+  var obs = ((document.getElementById('ev-observaciones')||{}).value||'').trim();
+  var sub = (document.getElementById('ev-subenivel')||{}).value||'no';
+
+  if (!alumno) { showToast('Selecciona un alumno','error'); return null; }
+  var data = evRecolectarScores();
+  if (!data || data.count === 0) { showToast('Califica al menos un criterio','error'); return null; }
+
+  var cat = evDetectarCat(alumno);
+  var grupos = (typeof CLASES_LIST !== 'undefined' ? CLASES_LIST : []).filter(function(g){ return (g.alumnos||[]).indexOf(alumno) !== -1; });
+
+  var record = {
+    alumno: alumno,
+    coach: coach,
+    fecha: fecha,
+    cat: cat,
+    nivel: grupos.length ? grupos[0].nivel : '',
+    scores: data.scores,
+    promedio: Math.round(data.promedio * 100) / 100,
+    observaciones: obs,
+    subeNivel: sub,
+    ts: Date.now()
+  };
+
+  var all = evLoadAll();
+  all.unshift(record);
+  evSaveAll(all);
+  showToast('Evaluación guardada para '+alumno,'success');
+  return record;
+}
+
+function evGuardarYPDF() {
+  var record = evGuardar();
+  if (record) evGenerarPDF(record);
+}
+
+// ── Render historial ──
+function evRenderHistorial() {
+  evPoblarSelectores();
+  var alumnoFil = (document.getElementById('ev-hist-alumno')||{}).value||'';
+  var catFil = (document.getElementById('ev-hist-cat')||{}).value||'';
+  var all = evLoadAll();
+  var filtered = all.filter(function(e){
+    if (alumnoFil && e.alumno !== alumnoFil) return false;
+    if (catFil && e.cat !== catFil) return false;
+    return true;
+  });
+
+  var el = document.getElementById('ev-hist-list');
+  if (!el) return;
+
+  if (!filtered.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2);font-size:12px">Sin evaluaciones registradas</div>';
+    return;
+  }
+
+  el.innerHTML = filtered.slice(0,20).map(function(e){
+    var starsHtml = '';
+    var full = Math.round(e.promedio);
+    for (var s=1;s<=5;s++) starsHtml += (s<=full ? '⭐' : '☆');
+
+    var catCol = e.cat==='Infantil'?'var(--inf)':e.cat==='Juvenil'?'var(--juv)':'var(--adu)';
+    var catBg = e.cat==='Infantil'?'rgba(74,222,128,.12)':e.cat==='Juvenil'?'rgba(96,165,250,.12)':'rgba(244,114,182,.12)';
+
+    return '<div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">'
+      +'<div><div style="font-size:13px;font-weight:700">'+e.alumno+'</div>'
+      +'<div style="font-size:10px;color:var(--muted2)">'+e.fecha+' · Coach '+e.coach+'</div></div>'
+      +'<div style="text-align:right"><div style="font-size:18px;letter-spacing:2px">'+starsHtml+'</div>'
+      +'<div style="font-size:10px;color:var(--muted2)">'+e.promedio.toFixed(1)+' / 5.0</div></div>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">'
+      +'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:'+catBg+';color:'+catCol+';font-weight:600">'+e.cat+'</span>'
+      +(e.nivel?'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--s2);color:var(--muted2)">'+e.nivel+'</span>':'')
+      +(e.subeNivel==='si'?'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(34,211,160,.12);color:var(--green);font-weight:600">⬆️ Subir nivel</span>':'')
+      +'</div>'
+      +(e.observaciones?'<div style="font-size:11px;color:var(--muted2);font-style:italic;margin-top:4px">'+e.observaciones+'</div>':'')
+      +'<div style="margin-top:8px"><button onclick=\'evGenerarPDF(evLoadAll().find(function(x){return x.ts==='+e.ts+'}))\' style="padding:5px 12px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📄 Descargar PDF</button></div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── Render avance (gráfica de progreso) ──
+function evRenderAvance() {
+  var nombre = (document.getElementById('ev-avance-alumno')||{}).value||'';
+  var body = document.getElementById('ev-avance-body');
+  if (!nombre || !body) {
+    if(body) body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2);font-size:12px">Selecciona un alumno para ver su avance</div>';
+    return;
+  }
+
+  var all = evLoadAll().filter(function(e){ return e.alumno === nombre; }).reverse(); // cronológico
+  if (!all.length) {
+    body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted2);font-size:12px">Sin evaluaciones para '+nombre+'</div>';
+    return;
+  }
+
+  var cat = all[all.length-1].cat;
+  var rubrica = EV_RUBRICA[cat];
+
+  // Gráfica de promedio en el tiempo
+  var html = '<div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">';
+  html += '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Evolución del promedio general</div>';
+
+  // Barra visual de cada evaluación
+  all.forEach(function(e, idx){
+    var pct = (e.promedio / 5) * 100;
+    var col = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--orange)' : pct >= 40 ? 'var(--acc)' : 'var(--red)';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+    html += '<div style="font-size:10px;color:var(--muted2);min-width:75px">'+e.fecha+'</div>';
+    html += '<div style="flex:1;background:var(--s3);border-radius:4px;height:18px;overflow:hidden;position:relative">';
+    html += '<div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:4px;transition:width .5s"></div>';
+    html += '<span style="position:absolute;right:6px;top:1px;font-size:10px;font-weight:700;color:var(--text)">'+e.promedio.toFixed(1)+'</span>';
+    html += '</div>';
+    html += '<div style="font-size:10px;color:var(--muted2);min-width:50px">Coach '+e.coach+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Desglose por área de la última evaluación
+  if (rubrica) {
+    var lastEval = all[all.length-1];
+    var areasMap = {};
+    rubrica.areas.forEach(function(item){
+      if (!areasMap[item.area]) areasMap[item.area] = { items:[], total:0, count:0 };
+      areasMap[item.area].items.push(item);
+      var s = (lastEval.scores && lastEval.scores[item.id]) || 0;
+      if (s > 0) { areasMap[item.area].total += s; areasMap[item.area].count++; }
+    });
+
+    html += '<div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">';
+    html += '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Última evaluación por área — '+lastEval.fecha+'</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">';
+
+    Object.keys(areasMap).forEach(function(areaName){
+      var ad = areasMap[areaName];
+      var avg = ad.count > 0 ? (ad.total / ad.count) : 0;
+      var pct = (avg/5)*100;
+      var col = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--orange)' : pct >= 40 ? 'var(--acc)' : 'var(--red)';
+      var starsStr = '';
+      for(var i=1;i<=5;i++) starsStr += i<=Math.round(avg)?'⭐':'☆';
+
+      html += '<div style="background:var(--s2);border-radius:10px;padding:12px">';
+      html += '<div style="font-size:11px;font-weight:700;margin-bottom:6px">'+areaName+'</div>';
+      html += '<div style="font-size:18px;margin-bottom:4px">'+starsStr+'</div>';
+      html += '<div style="background:var(--s3);border-radius:4px;height:6px;overflow:hidden">';
+      html += '<div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:4px"></div>';
+      html += '</div>';
+      html += '<div style="font-size:10px;color:var(--muted2);margin-top:4px">'+avg.toFixed(1)+' / 5.0</div>';
+      html += '</div>';
+    });
+
+    html += '</div></div>';
+  }
+
+  body.innerHTML = html;
+}
+
+// ── GENERAR PDF MEMBRETADO ──
+function evGenerarPDF(record) {
+  if (!record) return;
+
+  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+    showToast('Cargando jsPDF...','info');
+    setTimeout(function(){ evGenerarPDF(record); }, 800);
+    return;
+  }
+
+  var jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+  var doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'letter' });
+
+  var PW = 216, PH = 279;
+  var margin = 18;
+  var y = 0;
+
+  // ── FONDO ──
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, PW, PH, 'F');
+
+  // ── BARRA SUPERIOR (membrete) ──
+  doc.setFillColor(8, 12, 24);
+  doc.rect(0, 0, PW, 42, 'F');
+  // Línea decorativa amarilla
+  doc.setFillColor(200, 255, 0);
+  doc.rect(0, 0, PW, 3, 'F');
+
+  // ── LOGOS ──
+  y = 14;
+  try {
+    if (typeof X3_LOGO !== 'undefined' && X3_LOGO) {
+      doc.addImage(X3_LOGO, 'JPEG', margin, y - 3, 35, 12);
+    } else {
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(16);
+      doc.setTextColor(200, 255, 0);
+      doc.text('X3 PADEL CLUB', margin, y + 5);
+    }
+  } catch(e) {
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(16);
+    doc.setTextColor(200, 255, 0);
+    doc.text('X3 PADEL CLUB', margin, y + 5);
+  }
+
+  // M3 Logo (texto)
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.setTextColor(79, 142, 247);
+  doc.text('ACADEMIA M3', PW - margin, y + 2, { align:'right' });
+  doc.setFontSize(8);
+  doc.setTextColor(122, 143, 186);
+  doc.text('Sistema de Evaluacion Deportiva', PW - margin, y + 8, { align:'right' });
+
+  // Título
+  y = 32;
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.setTextColor(200, 255, 0);
+  var tituloEval = record.cat === 'Infantil' ? 'EVALUACION INFANTIL' : record.cat === 'Juvenil' ? 'EVALUACION JUVENIL' : 'EVALUACION ADULTO';
+  doc.text(tituloEval, PW/2, y, { align:'center' });
+  doc.setFontSize(8);
+  doc.setTextColor(122, 143, 186);
+  var mesAnio = evFormatMesAnio(record.fecha);
+  doc.text(mesAnio, PW/2, y + 5, { align:'center' });
+
+  // ── DATOS DEL ALUMNO ──
+  y = 50;
+  doc.setFillColor(245, 247, 250);
+  doc.roundedRect(margin, y, PW - margin*2, 24, 3, 3, 'F');
+  doc.setDrawColor(220, 225, 235);
+  doc.roundedRect(margin, y, PW - margin*2, 24, 3, 3, 'S');
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.setTextColor(120, 130, 150);
+  doc.text('ALUMNO', margin + 6, y + 6);
+  doc.text('CATEGORIA', PW/2 - 10, y + 6);
+  doc.text('COACH EVALUADOR', PW - margin - 50, y + 6);
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.setTextColor(30, 35, 50);
+  doc.text(record.alumno, margin + 6, y + 14);
+  doc.setFontSize(10);
+  doc.text(record.cat + (record.nivel ? ' - ' + record.nivel : ''), PW/2 - 10, y + 14);
+  doc.text(record.coach, PW - margin - 50, y + 14);
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(120, 130, 150);
+  doc.text('Fecha: ' + record.fecha, margin + 6, y + 20);
+
+  // ── RÚBRICA CON ESTRELLAS ──
+  y = 82;
+  var rubrica = EV_RUBRICA[record.cat];
+  if (!rubrica) return;
+
+  var areasMap = {};
+  rubrica.areas.forEach(function(item){
+    if (!areasMap[item.area]) areasMap[item.area] = [];
+    areasMap[item.area].push(item);
+  });
+
+  var areaColors = {
+    'Fundamentos Técnicos':[79,142,247], 'Técnica':[79,142,247],
+    'Motricidad y Coordinación':[34,211,160], 'Físico':[34,211,160],
+    'Juego y Táctica':[124,92,252], 'Táctica':[124,92,252],
+    'Actitud y Comportamiento':[245,158,11], 'Mental':[245,158,11]
+  };
+
+  Object.keys(areasMap).forEach(function(areaName){
+    var items = areasMap[areaName];
+    var col = areaColors[areaName] || [79,142,247];
+
+    // Verificar si cabe en la página
+    var neededH = 8 + items.length * 7;
+    if (y + neededH > PH - 30) {
+      doc.addPage();
+      y = 20;
+    }
+
+    // Header del área
+    doc.setFillColor(col[0], col[1], col[2]);
+    doc.roundedRect(margin, y, PW - margin*2, 7, 2, 2, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.text(areaName.toUpperCase(), margin + 5, y + 5);
+    y += 10;
+
+    // Items
+    items.forEach(function(item, idx){
+      var bg = idx % 2 === 0 ? [250,251,253] : [255,255,255];
+      doc.setFillColor(bg[0], bg[1], bg[2]);
+      doc.rect(margin, y - 1, PW - margin*2, 7, 'F');
+
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(50, 55, 70);
+      doc.text(item.nombre, margin + 5, y + 3.5);
+
+      // Estrellas
+      var score = (record.scores && record.scores[item.id]) || 0;
+      var starStr = '';
+      var symbol = record.cat === 'Infantil' ? 'T' : 'S'; // T=trofeo, S=star
+      for (var s=1; s<=5; s++) {
+        starStr += s <= score ? '\u2605 ' : '\u2606 ';
+      }
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(10);
+      doc.setTextColor(col[0], col[1], col[2]);
+      doc.text(starStr, PW - margin - 5, y + 4, { align:'right' });
+
+      // Score number
+      doc.setFontSize(8);
+      doc.setTextColor(120, 130, 150);
+      doc.text(score+'/5', PW - margin - 32, y + 3.5);
+
+      y += 7;
+    });
+    y += 4;
+  });
+
+  // ── RESUMEN / PROMEDIO ──
+  if (y + 30 > PH - 30) { doc.addPage(); y = 20; }
+
+  doc.setFillColor(8, 12, 24);
+  doc.roundedRect(margin, y, PW - margin*2, 22, 3, 3, 'F');
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9);
+  doc.setTextColor(200, 255, 0);
+  doc.text('CALIFICACION GENERAL', margin + 8, y + 8);
+
+  // Estrellas promedio
+  var promFull = Math.round(record.promedio);
+  var promStars = '';
+  for(var ps=1;ps<=5;ps++) promStars += ps<=promFull ? '\u2605 ' : '\u2606 ';
+  doc.setFontSize(16);
+  doc.setTextColor(245, 158, 11);
+  doc.text(promStars, PW/2 + 10, y + 9);
+
+  doc.setFontSize(12);
+  doc.setTextColor(255, 255, 255);
+  doc.text(record.promedio.toFixed(1) + ' / 5.0', PW - margin - 8, y + 9, { align:'right' });
+
+  // Recomendación
+  var recText = record.subeNivel === 'si' ? 'RECOMENDADO PARA SUBIR DE NIVEL' : record.subeNivel === 'casi' ? 'EN CAMINO A SUBIR DE NIVEL (1-2 meses)' : 'CONTINUAR EN NIVEL ACTUAL';
+  var recCol = record.subeNivel === 'si' ? [34,211,160] : record.subeNivel === 'casi' ? [245,158,11] : [122,143,186];
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.setTextColor(recCol[0], recCol[1], recCol[2]);
+  doc.text(recText, margin + 8, y + 17);
+
+  y += 28;
+
+  // ── OBSERVACIONES ──
+  if (record.observaciones) {
+    if (y + 25 > PH - 30) { doc.addPage(); y = 20; }
+
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(margin, y, PW - margin*2, 20, 3, 3, 'F');
+    doc.setDrawColor(220, 225, 235);
+    doc.roundedRect(margin, y, PW - margin*2, 20, 3, 3, 'S');
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(120, 130, 150);
+    doc.text('OBSERVACIONES DEL COACH', margin + 5, y + 5);
+
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(50, 55, 70);
+    var obsLines = doc.splitTextToSize(record.observaciones, PW - margin*2 - 10);
+    doc.text(obsLines.slice(0,3), margin + 5, y + 11);
+    y += 24;
+  }
+
+  // ── PIE DE PÁGINA / MEMBRETE ──
+  var footerY = PH - 18;
+  doc.setDrawColor(220, 225, 235);
+  doc.setLineWidth(0.3);
+  doc.line(margin, footerY, PW - margin, footerY);
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(160, 165, 180);
+  doc.text('X3 Padel Club · Academia M3 · Sistema de Evaluacion Deportiva', margin, footerY + 5);
+  doc.text('Documento generado el ' + new Date().toLocaleDateString('es-MX'), margin, footerY + 9);
+  doc.text('www.x3padelclub.com', PW - margin, footerY + 5, { align:'right' });
+
+  // ── DESCARGAR ──
+  var filename = 'Evaluacion_' + record.alumno.replace(/\s/g,'_') + '_' + record.fecha + '.pdf';
+  doc.save(filename);
+  showToast('PDF descargado: ' + filename, 'success');
+}
+
+// ── Helper: formato mes/año ──
+function evFormatMesAnio(fechaStr) {
+  if (!fechaStr) return '';
+  var parts = fechaStr.split('-');
+  var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var mes = parseInt(parts[1]) - 1;
+  return meses[mes] + ' ' + parts[0];
+}
+
+// ── Hook into nav system ──
+(function(){
+  var _origNav = window.nav || function(){};
+  var _patched = false;
+
+  function patchNav(){
+    if(_patched) return;
+    _patched = true;
+    var origNav = window.nav;
+    window.nav = function(page, el){
+      origNav(page, el);
+      if(page === 'evaluaciones'){
+        evPoblarSelectores();
+      }
+    };
+  }
+
+  // Patch after a short delay to ensure nav is defined
+  setTimeout(patchNav, 500);
+})();
+</script>
+
 </body>
 </html>
