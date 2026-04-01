@@ -1132,14 +1132,6 @@ function saveCosto(){
       <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px">
         <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Observaciones generales</div>
         <textarea id="ev-observaciones" rows="3" placeholder="Logros del período, áreas de mejora, recomendaciones para papás..." style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;resize:none;box-sizing:border-box;font-family:inherit"></textarea>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
-          <label style="font-size:11px;color:var(--muted2)">¿Listo para subir de nivel?</label>
-          <select id="ev-subenivel" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;outline:none">
-            <option value="no">No aún — necesita más práctica</option>
-            <option value="casi">Casi — 1-2 meses más</option>
-            <option value="si">Sí — recomendar cambio de grupo</option>
-          </select>
-        </div>
       </div>
       <div style="display:flex;gap:8px">
         <button onclick="evGuardar()" style="flex:1;padding:12px;background:var(--acc);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">💾 Guardar Evaluación</button>
@@ -7602,7 +7594,6 @@ function evGuardar() {
   var coach = (document.getElementById('ev-coach')||{}).value||'';
   var fecha = (document.getElementById('ev-fecha')||{}).value||'';
   var obs = ((document.getElementById('ev-observaciones')||{}).value||'').trim();
-  var sub = (document.getElementById('ev-subenivel')||{}).value||'no';
 
   if (!alumno) { showToast('Selecciona un alumno','error'); return null; }
   var data = evRecolectarScores();
@@ -7620,7 +7611,6 @@ function evGuardar() {
     scores: data.scores,
     promedio: Math.round(data.promedio * 100) / 100,
     observaciones: obs,
-    subeNivel: sub,
     ts: Date.now()
   };
 
@@ -7674,10 +7664,13 @@ function evRenderHistorial() {
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">'
       +'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:'+catBg+';color:'+catCol+';font-weight:600">'+e.cat+'</span>'
       +(e.nivel?'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--s2);color:var(--muted2)">'+e.nivel+'</span>':'')
-      +(e.subeNivel==='si'?'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(34,211,160,.12);color:var(--green);font-weight:600">⬆️ Subir nivel</span>':'')
       +'</div>'
       +(e.observaciones?'<div style="font-size:11px;color:var(--muted2);font-style:italic;margin-top:4px">'+e.observaciones+'</div>':'')
-      +'<div style="margin-top:8px"><button onclick=\'evGenerarPDF(evLoadAll().find(function(x){return x.ts==='+e.ts+'}))\' style="padding:5px 12px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📄 Descargar PDF</button></div>'
+      +'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+      +'<button onclick=\'evGenerarPDF(evLoadAll().find(function(x){return x.ts==='+e.ts+'}))\' style="padding:5px 12px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📄 PDF</button>'
+      +'<button onclick=\'evEditarEval('+e.ts+')\' style="padding:5px 12px;background:rgba(79,142,247,.15);border:1px solid rgba(79,142,247,.3);color:var(--acc);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✏️ Editar</button>'
+      +'<button onclick=\'evEliminarEval('+e.ts+')\' style="padding:5px 12px;background:rgba(240,79,79,.1);border:1px solid rgba(240,79,79,.25);color:var(--red);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🗑️ Eliminar</button>'
+      +'</div>'
       +'</div>';
   }).join('');
 }
@@ -7756,6 +7749,68 @@ function evRenderAvance() {
   }
 
   body.innerHTML = html;
+}
+
+// ── Eliminar evaluación ──
+function evEliminarEval(ts) {
+  if (!confirm('¿Eliminar esta evaluación? Esta acción no se puede deshacer.')) return;
+  var all = evLoadAll().filter(function(e){ return e.ts !== ts; });
+  evSaveAll(all);
+  showToast('Evaluación eliminada','success');
+  evRenderHistorial();
+}
+
+// ── Editar evaluación (cargar datos en el formulario) ──
+function evEditarEval(ts) {
+  var all = evLoadAll();
+  var record = all.find(function(e){ return e.ts === ts; });
+  if (!record) return;
+
+  // Cambiar a tab nueva evaluación
+  evTab('nueva');
+
+  // Cargar datos
+  var selAlumno = document.getElementById('ev-alumno');
+  if (selAlumno) { selAlumno.value = record.alumno; }
+  var selCoach = document.getElementById('ev-coach');
+  if (selCoach) selCoach.value = record.coach;
+  var inputFecha = document.getElementById('ev-fecha');
+  if (inputFecha) inputFecha.value = record.fecha;
+
+  // Cargar rúbrica
+  evCargarAlumno();
+
+  // Restaurar scores después de un breve delay
+  setTimeout(function(){
+    var rubrica = EV_RUBRICA[record.cat];
+    if (!rubrica) return;
+    rubrica.areas.forEach(function(item){
+      var score = (record.scores && record.scores[item.id]) || 0;
+      if (score > 0) evSetStar(item.id, score);
+    });
+    var obsEl = document.getElementById('ev-observaciones');
+    if (obsEl) obsEl.value = record.observaciones || '';
+  }, 200);
+
+  // Eliminar la evaluación vieja (se guardará como nueva al dar guardar)
+  var updated = all.filter(function(e){ return e.ts !== ts; });
+  evSaveAll(updated);
+  showToast('Editando evaluación de ' + record.alumno + ' — haz los cambios y guarda','info');
+}
+
+// ── Dibujar estrella en PDF (sin unicode) ──
+function evDrawStar(doc, cx, cy, r, filled, color) {
+  if (filled) {
+    doc.setFillColor(color[0], color[1], color[2]);
+    doc.circle(cx, cy, r, 'F');
+    doc.setFontSize(r*3.2);
+    doc.setTextColor(255,255,255);
+    doc.text('*', cx - r*0.45, cy + r*0.5);
+  } else {
+    doc.setDrawColor(200, 205, 215);
+    doc.setLineWidth(0.3);
+    doc.circle(cx, cy, r, 'S');
+  }
 }
 
 // ── GENERAR PDF MEMBRETADO ──
@@ -7896,31 +7951,33 @@ function evGenerarPDF(record) {
       doc.setFillColor(bg[0], bg[1], bg[2]);
       doc.rect(margin, y - 1, PW - margin*2, 7, 'F');
 
-      doc.setFont('helvetica','normal');
+      doc.setFont('helvetica','bold');
       doc.setFontSize(8.5);
       doc.setTextColor(50, 55, 70);
       doc.text(item.nombre, margin + 5, y + 3.5);
 
-      // Estrellas
-      var score = (record.scores && record.scores[item.id]) || 0;
-      var starStr = '';
-      var symbol = record.cat === 'Infantil' ? 'T' : 'S'; // T=trofeo, S=star
-      for (var s=1; s<=5; s++) {
-        starStr += s <= score ? '\u2605 ' : '\u2606 ';
-      }
+      // Descripción del concepto
       doc.setFont('helvetica','normal');
-      doc.setFontSize(10);
-      doc.setTextColor(col[0], col[1], col[2]);
-      doc.text(starStr, PW - margin - 5, y + 4, { align:'right' });
+      doc.setFontSize(6.5);
+      doc.setTextColor(140, 145, 160);
+      doc.text(item.desc, margin + 5, y + 7);
 
       // Score number
-      doc.setFontSize(8);
-      doc.setTextColor(120, 130, 150);
-      doc.text(score+'/5', PW - margin - 32, y + 3.5);
+      var score = (record.scores && record.scores[item.id]) || 0;
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9);
+      doc.setTextColor(col[0], col[1], col[2]);
+      doc.text(score+'/5', PW - margin - 30, y + 5);
 
-      y += 7;
+      // Estrellas como círculos rellenos
+      for (var s=1; s<=5; s++) {
+        var sx = PW - margin - 24 + (s * 5);
+        evDrawStar(doc, sx, y + 4, 1.8, s <= score, col);
+      }
+
+      y += 10;
     });
-    y += 4;
+    y += 3;
   });
 
   // ── RESUMEN / PROMEDIO ──
@@ -7934,36 +7991,26 @@ function evGenerarPDF(record) {
   doc.setTextColor(200, 255, 0);
   doc.text('CALIFICACION GENERAL', margin + 8, y + 8);
 
-  // Estrellas promedio
+  // Estrellas promedio como círculos
   var promFull = Math.round(record.promedio);
-  var promStars = '';
-  for(var ps=1;ps<=5;ps++) promStars += ps<=promFull ? '\u2605 ' : '\u2606 ';
-  doc.setFontSize(16);
-  doc.setTextColor(245, 158, 11);
-  doc.text(promStars, PW/2 + 10, y + 9);
+  for(var ps=1;ps<=5;ps++) {
+    evDrawStar(doc, PW/2 + (ps * 7), y + 7, 2.5, ps<=promFull, [245,158,11]);
+  }
 
   doc.setFontSize(12);
   doc.setTextColor(255, 255, 255);
   doc.text(record.promedio.toFixed(1) + ' / 5.0', PW - margin - 8, y + 9, { align:'right' });
 
-  // Recomendación
-  var recText = record.subeNivel === 'si' ? 'RECOMENDADO PARA SUBIR DE NIVEL' : record.subeNivel === 'casi' ? 'EN CAMINO A SUBIR DE NIVEL (1-2 meses)' : 'CONTINUAR EN NIVEL ACTUAL';
-  var recCol = record.subeNivel === 'si' ? [34,211,160] : record.subeNivel === 'casi' ? [245,158,11] : [122,143,186];
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(8);
-  doc.setTextColor(recCol[0], recCol[1], recCol[2]);
-  doc.text(recText, margin + 8, y + 17);
+  y += 22;
 
-  y += 28;
-
-  // ── OBSERVACIONES ──
+  // ── OBSERVACIONES (siempre en la misma página) ──
   if (record.observaciones) {
-    if (y + 25 > PH - 30) { doc.addPage(); y = 20; }
-
     doc.setFillColor(245, 247, 250);
-    doc.roundedRect(margin, y, PW - margin*2, 20, 3, 3, 'F');
+    var obsLines = doc.splitTextToSize(record.observaciones, PW - margin*2 - 10);
+    var obsH = 10 + obsLines.length * 4;
+    doc.roundedRect(margin, y, PW - margin*2, obsH, 3, 3, 'F');
     doc.setDrawColor(220, 225, 235);
-    doc.roundedRect(margin, y, PW - margin*2, 20, 3, 3, 'S');
+    doc.roundedRect(margin, y, PW - margin*2, obsH, 3, 3, 'S');
 
     doc.setFont('helvetica','bold');
     doc.setFontSize(7);
@@ -7973,9 +8020,8 @@ function evGenerarPDF(record) {
     doc.setFont('helvetica','normal');
     doc.setFontSize(9);
     doc.setTextColor(50, 55, 70);
-    var obsLines = doc.splitTextToSize(record.observaciones, PW - margin*2 - 10);
-    doc.text(obsLines.slice(0,3), margin + 5, y + 11);
-    y += 24;
+    doc.text(obsLines.slice(0,4), margin + 5, y + 10);
+    y += obsH + 4;
   }
 
   // ── PIE DE PÁGINA / MEMBRETE ──
