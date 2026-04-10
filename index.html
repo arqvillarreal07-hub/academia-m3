@@ -415,15 +415,15 @@ function saveCosto(){
   <div id="dash-welcome" style="margin-bottom:14px"></div>
 
   <!-- Filtros de periodo -->
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-    <span style="font-size:11px;color:var(--muted);font-weight:600">VER:</span>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px">VER:</span>
     <button class="btn active" id="dash-per-mes" onclick="setDashPeriodo('mes',this)" style="font-size:11px">Mes actual</button>
     <button class="btn" id="dash-per-trim" onclick="setDashPeriodo('trim',this)" style="font-size:11px">Trimestre</button>
     <button class="btn" id="dash-per-anio" onclick="setDashPeriodo('anio',this)" style="font-size:11px">Año</button>
     <select id="dash-mes-sel" onchange="renderDashboard()" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:11px;outline:none;margin-left:auto"></select>
   </div>
 
-  <!-- KPIs principales -->
+  <!-- KPIs principales con iconos -->
   <div class="kgrid c4" id="dash-kpis">
     <div class="kcard"><div class="skeleton" style="height:60px"></div></div>
     <div class="kcard"><div class="skeleton" style="height:60px"></div></div>
@@ -431,25 +431,37 @@ function saveCosto(){
     <div class="kcard"><div class="skeleton" style="height:60px"></div></div>
   </div>
 
-  <!-- Barra de cobranza -->
-  <div id="dash-cobranza" style="margin-bottom:12px"></div>
+  <!-- Cobranza circular progress -->
+  <div id="dash-cobranza" style="margin-bottom:16px"></div>
 
-  <!-- Gráficas: Ingresos + Categorías -->
+  <!-- Graficas: Ingresos (area chart) + Donut categorias -->
   <div class="pgrid g2">
-    <div class="panel"><div class="ph"><div><div class="ph-title">💰 Ingresos por Mes</div><div class="ph-sub">Últimos 6 meses</div></div></div><div class="pb" id="dash-chart" style="height:160px;display:flex;align-items:flex-end;gap:6px;"></div></div>
-    <div class="panel"><div class="ph"><div class="ph-title">📊 Por Categoría</div></div><div class="pb" id="dash-cats"></div></div>
+    <div class="panel">
+      <div class="ph"><div><div class="ph-title">💰 Ingresos por Mes</div><div class="ph-sub">Últimos 6 meses — gráfica de tendencia</div></div></div>
+      <div class="pb" id="dash-chart" style="height:220px;position:relative;overflow:hidden;"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="ph-title">📊 Distribución por Categoría</div></div>
+      <div class="pb" id="dash-cats" style="display:flex;flex-direction:column;align-items:center;gap:10px;"></div>
+    </div>
   </div>
 
   <!-- Coaches -->
-  <div class="panel" style="margin-bottom:12px">
-    <div class="ph"><div class="ph-title">🎾 Clases por Coach</div></div>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="ph-title">🎾 Carga por Coach</div><div class="ph-sub" style="margin-left:auto;font-size:10px;color:var(--muted2)">Clases semanales</div></div>
     <div class="pb" id="dash-coaches"></div>
   </div>
 
-  <!-- Pagos + Pendientes + Asistencia -->
+  <!-- Pagos + Pendientes -->
   <div class="pgrid g2e">
-    <div class="panel"><div class="ph"><div class="ph-title">🕐 Últimos Pagos</div></div><div class="pb" id="dash-recent"></div></div>
-    <div class="panel"><div class="ph"><div class="ph-title">⏳ Pendientes del Mes</div></div><div class="pb" id="dash-pends"></div></div>
+    <div class="panel">
+      <div class="ph"><div class="ph-title">🕐 Últimos Pagos</div></div>
+      <div class="pb" id="dash-recent" style="max-height:280px;overflow-y:auto;"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="ph-title">⏳ Pendientes del Mes</div></div>
+      <div class="pb" id="dash-pends" style="max-height:280px;overflow-y:auto;"></div>
+    </div>
   </div>
 
   <!-- Widget asistencia -->
@@ -1854,12 +1866,12 @@ function setDashPeriodo(p,el){
   renderDashboard();
 }
 function renderDashboard(){
-  const now=new Date();const cy=now.getFullYear();
+  var now=new Date();var cy=now.getFullYear();
   // ── Periodo ──
   var periodoMeses=[];
   var periodoLabel='';
   if(dashPeriodo==='trim'){
-    const trimStart=Math.floor(now.getMonth()/3)*3;
+    var trimStart=Math.floor(now.getMonth()/3)*3;
     for(var ti=0;ti<3;ti++) periodoMeses.push({m:MONTHS[trimStart+ti],y:cy});
     periodoLabel='Trimestre '+(Math.floor(now.getMonth()/3)+1);
   } else if(dashPeriodo==='anio'){
@@ -1872,59 +1884,256 @@ function renderDashboard(){
   // Populate mes selector
   var msel=$('dash-mes-sel');
   if(msel&&msel.options.length<2){MONTHS.forEach(function(m,i){var o=document.createElement('option');o.value=i;o.textContent=m;msel.appendChild(o);});msel.value=now.getMonth();}
-  const cm=MONTHS[now.getMonth()];
-  const act=DB.alumnos.filter(a=>a.est==='Activo');
-  const pm=DB.pagos.filter(p=>periodoMeses.some(function(x){return x.m===p.mes&&x.y===p.anio;}));
-  const cobrado=pm.reduce((s,p)=>s+p.total,0);
-  const meta=act.reduce((s,a)=>s+a.men,0)*(dashPeriodo==='anio'?12:dashPeriodo==='trim'?3:1);
-  const pmMes=DB.pagos.filter(p=>p.mes===cm&&p.anio===cy);
-  const pagados=act.filter(a=>pmMes.some(p=>p.alumno===a.nombre)).length;
-  // Bienvenida
-  var hoy=new Date();var hora=hoy.getHours();var saludo=hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches';
-  var fechaHoy=hoy.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  $('dash-welcome').innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div><div style="font-size:20px;font-weight:800">'+saludo+' 👋</div><div style="font-size:11px;color:var(--muted2)">Panel de control · Academia M3 / X3 Pádel</div></div><div style="font-size:11px;color:var(--muted2);text-align:right">'+fechaHoy+'</div></div>';
+  var cm=MONTHS[now.getMonth()];
+  var act=DB.alumnos.filter(function(a){return a.est==='Activo';});
+  var pm=DB.pagos.filter(function(p){return periodoMeses.some(function(x){return x.m===p.mes&&x.y===p.anio;});});
+  var cobrado=pm.reduce(function(s,p){return s+p.total;},0);
+  var meta=act.reduce(function(s,a){return s+a.men;},0)*(dashPeriodo==='anio'?12:dashPeriodo==='trim'?3:1);
+  var pmMes=DB.pagos.filter(function(p){return p.mes===cm&&p.anio===cy;});
+  var pagados=act.filter(function(a){return pmMes.some(function(p){return p.alumno===a.nombre;});}).length;
 
-  // KPIs con estilo mejorado
+  // ── Bienvenida ──
+  var hoy=new Date();var hora=hoy.getHours();
+  var saludo=hora<12?'Buenos dias':hora<18?'Buenas tardes':'Buenas noches';
+  var fechaHoy=hoy.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  $('dash-welcome').innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
+    +'<div>'
+    +'<div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px">'+saludo+' <span style="display:inline-block;animation:wave 1.8s ease-in-out infinite">&#x1F44B;</span></div>'
+    +'<div style="font-size:11px;color:var(--muted2);margin-top:2px">Panel de control &middot; Academia M3 / X3 Padel</div>'
+    +'</div>'
+    +'<div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:6px 14px;font-size:11px;color:var(--muted2);display:flex;align-items:center;gap:6px">'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+    +fechaHoy
+    +'</div></div>'
+    +'<style>@keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(20deg)}50%{transform:rotate(-10deg)}75%{transform:rotate(15deg)}}</style>';
+
+  // ── KPIs con iconos SVG ──
   var inact=DB.alumnos.length-act.length;
   var cobPct=meta>0?Math.round(cobrado/meta*100):0;
-  $('dash-kpis').innerHTML=`
-    <div class="kcard" style="border-top:3px solid var(--acc)"><div class="kl">👥 Total Alumnos</div><div class="kv blue" style="font-size:30px">${DB.alumnos.length}</div><div class="ks"><span style="color:var(--green)">${act.length} activos</span> · <span style="color:var(--red)">${inact} inactivos</span></div></div>
-    <div class="kcard g" style="border-top:3px solid var(--green)"><div class="kl">✅ Pagados ${cm}</div><div class="kv green" style="font-size:30px">${pagados}</div><div class="ks">de ${act.length} activos · ${act.length>0?Math.round(pagados/act.length*100):0}%</div></div>
-    <div class="kcard o" style="border-top:3px solid var(--orange)"><div class="kl">⏳ Pendientes</div><div class="kv orange" style="font-size:30px">${act.length-pagados}</div><div class="ks">sin pago ${cm}</div></div>
-    <div class="kcard p" style="border-top:3px solid var(--acc2)"><div class="kl">💰 ${periodoLabel}</div><div class="kv purple" style="font-size:24px">${fmt(cobrado)}</div><div class="ks">Meta: ${fmt(meta)} · ${cobPct}%</div></div>`;
+  var pagPct=act.length>0?Math.round(pagados/act.length*100):0;
+  var kpiIcon1='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--acc)"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>';
+  var kpiIcon2='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--green)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  var kpiIcon3='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--orange)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+  var kpiIcon4='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--acc2)"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>';
+  $('dash-kpis').innerHTML=''
+    +'<div class="kcard" style="border-top:3px solid var(--acc)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div class="kl" style="margin:0">TOTAL ALUMNOS</div><div style="background:rgba(79,142,247,.12);border-radius:8px;padding:6px">'+kpiIcon1+'</div></div>'
+    +'<div class="kv blue" style="font-size:32px">'+DB.alumnos.length+'</div>'
+    +'<div class="ks"><span style="color:var(--green)">'+act.length+' activos</span> &middot; <span style="color:var(--red)">'+inact+' inactivos</span></div></div>'
+    +'<div class="kcard g" style="border-top:3px solid var(--green)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div class="kl" style="margin:0">PAGADOS '+cm.toUpperCase()+'</div><div style="background:rgba(34,211,160,.12);border-radius:8px;padding:6px">'+kpiIcon2+'</div></div>'
+    +'<div class="kv green" style="font-size:32px">'+pagados+'</div>'
+    +'<div class="ks">de '+act.length+' activos &middot; '+pagPct+'%</div></div>'
+    +'<div class="kcard o" style="border-top:3px solid var(--orange)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div class="kl" style="margin:0">PENDIENTES</div><div style="background:rgba(245,158,11,.12);border-radius:8px;padding:6px">'+kpiIcon3+'</div></div>'
+    +'<div class="kv orange" style="font-size:32px">'+(act.length-pagados)+'</div>'
+    +'<div class="ks">sin pago '+cm+'</div></div>'
+    +'<div class="kcard p" style="border-top:3px solid var(--acc2)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div class="kl" style="margin:0">'+periodoLabel.toUpperCase()+'</div><div style="background:rgba(124,92,252,.12);border-radius:8px;padding:6px">'+kpiIcon4+'</div></div>'
+    +'<div class="kv purple" style="font-size:26px">'+fmt(cobrado)+'</div>'
+    +'<div class="ks">Meta: '+fmt(meta)+' &middot; '+cobPct+'%</div></div>';
 
-  // Barra de cobranza
-  $('dash-cobranza').innerHTML='<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;color:var(--muted2)">Avance de cobranza '+cm+'</span><span style="font-size:10px;font-weight:700;color:var(--green)">'+cobPct+'%</span></div><div style="background:var(--s3);border-radius:6px;height:10px;overflow:hidden"><div style="height:100%;width:'+Math.min(cobPct,100)+'%;background:linear-gradient(90deg,var(--acc),var(--green));border-radius:6px;transition:width .5s"></div></div><div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--muted2)"><span>Cobrado: '+fmt(cobrado)+'</span><span>Meta: '+fmt(meta)+'</span></div></div>';
-  const last6=[];for(let i=5;i>=0;i--){const d=new Date(cy,now.getMonth()-i,1);last6.push({m:MONTHS[d.getMonth()],y:d.getFullYear()});}
-  const maxV=Math.max(...last6.map(({m,y})=>DB.pagos.filter(p=>p.mes===m&&p.anio===y).reduce((s,p)=>s+p.total,0)),1);
-  $('dash-chart').innerHTML=last6.map(({m,y},idx)=>{const v=DB.pagos.filter(p=>p.mes===m&&p.anio===y).reduce((s,p)=>s+p.total,0);const h=Math.max(8,Math.round(v/maxV*130));const isMax=v===maxV&&v>0;return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer" title="${m} ${y}: ${fmt(v)}"><div style="font-size:10px;font-weight:${isMax?'800':'400'};color:${isMax?'var(--green)':'var(--muted2)'}">${v?fmt(v):''}</div><div style="width:100%;height:${h}px;background:linear-gradient(0deg,${isMax?'var(--green)':'var(--acc)'},${isMax?'#6BCB77':'var(--acc2)'});border-radius:6px 6px 0 0;min-height:4px;transition:height .3s;box-shadow:${isMax?'0 0 12px rgba(79,142,247,.3)':'none'}"></div><div style="font-size:10px;color:${idx===5?'var(--text)':'var(--muted)'};font-weight:${idx===5?'700':'400'}">${m.slice(0,3)}</div></div>`;}).join('');
-  var catData=['Infantil','Juvenil','Adulto'].map(c=>{var n=act.filter(a=>a.cat===c).length;var pct=act.length?Math.round(n/act.length*100):0;var ingrCat=DB.pagos.filter(p=>act.some(a=>a.nombre===p.alumno&&a.cat===c)).reduce((s,p)=>s+p.total,0);return{cat:c,n:n,pct:pct,ingr:ingrCat};});
-  $('dash-cats').innerHTML=catData.map(c=>`<div style="background:var(--s2);border-radius:10px;padding:10px 12px;margin-bottom:8px;border-left:3px solid ${catColor(c.cat)}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div><span style="color:${catColor(c.cat)};font-weight:800;font-size:13px">${c.cat}</span></div><span style="font-size:20px;font-weight:800;color:var(--text)">${c.n}</span></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted2);margin-bottom:4px"><span>${c.pct}% del total</span><span>${fmt(c.ingr)} cobrado</span></div><div class="pbar" style="height:6px"><div class="pfill" style="width:${c.pct}%;background:${catColor(c.cat)}"></div></div></div>`).join('');
-  // Clases por coach
+  // ── Cobranza circular progress (SVG ring) ──
+  var circR=40;var circC=2*Math.PI*circR;
+  var circPct=Math.min(cobPct,100);
+  var circOffset=circC-(circPct/100)*circC;
+  var circColor=cobPct>=80?'#22d3a0':cobPct>=50?'#f59e0b':'#f04f4f';
+  $('dash-cobranza').innerHTML=''
+    +'<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">'
+    +'<svg width="100" height="100" viewBox="0 0 100 100" style="flex-shrink:0">'
+    +'<circle cx="50" cy="50" r="'+circR+'" fill="none" stroke="var(--s3)" stroke-width="8"/>'
+    +'<circle cx="50" cy="50" r="'+circR+'" fill="none" stroke="'+circColor+'" stroke-width="8" stroke-linecap="round" '
+    +'stroke-dasharray="'+circC+'" stroke-dashoffset="'+circOffset+'" '
+    +'transform="rotate(-90 50 50)" style="transition:stroke-dashoffset .8s ease"/>'
+    +'<text x="50" y="46" text-anchor="middle" fill="'+circColor+'" font-family="Syne,sans-serif" font-weight="800" font-size="22">'+cobPct+'%</text>'
+    +'<text x="50" y="62" text-anchor="middle" fill="var(--muted2)" font-size="8">COBRANZA</text>'
+    +'</svg>'
+    +'<div style="flex:1;min-width:180px">'
+    +'<div style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;margin-bottom:8px">Avance de cobranza &mdash; '+cm+'</div>'
+    +'<div style="display:flex;gap:24px;margin-bottom:10px">'
+    +'<div><div style="font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px">Cobrado</div><div style="font-size:16px;font-weight:800;color:var(--green)">'+fmt(cobrado)+'</div></div>'
+    +'<div><div style="font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px">Meta</div><div style="font-size:16px;font-weight:800;color:var(--text)">'+fmt(meta)+'</div></div>'
+    +'<div><div style="font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px">Faltante</div><div style="font-size:16px;font-weight:800;color:var(--orange)">'+fmt(Math.max(meta-cobrado,0))+'</div></div>'
+    +'</div>'
+    +'<div style="background:var(--s3);border-radius:6px;height:8px;overflow:hidden"><div style="height:100%;width:'+Math.min(cobPct,100)+'%;background:linear-gradient(90deg,var(--acc),'+circColor+');border-radius:6px;transition:width .6s"></div></div>'
+    +'</div></div>';
+
+  // ── SVG Area Chart: Ingresos ultimos 6 meses ──
+  var last6=[];
+  for(var li=5;li>=0;li--){var ld=new Date(cy,now.getMonth()-li,1);last6.push({m:MONTHS[ld.getMonth()],y:ld.getFullYear()});}
+  var last6vals=last6.map(function(x){return DB.pagos.filter(function(p){return p.mes===x.m&&p.anio===x.y;}).reduce(function(s,p){return s+p.total;},0);});
+  var maxV=Math.max.apply(null,last6vals.concat([1]));
+  var svgW=520;var svgH=180;var padL=50;var padR=20;var padT=30;var padB=40;
+  var chartW=svgW-padL-padR;var chartH=svgH-padT-padB;
+  var points=[];
+  for(var pi=0;pi<6;pi++){
+    var px=padL+(pi/(5))*chartW;
+    var py=padT+chartH-(last6vals[pi]/maxV)*chartH;
+    points.push({x:px,y:py,v:last6vals[pi]});
+  }
+  // Build smooth path
+  var linePath='M'+points[0].x+','+points[0].y;
+  for(var si=1;si<points.length;si++){
+    var cpx1=points[si-1].x+(points[si].x-points[si-1].x)*0.4;
+    var cpx2=points[si].x-(points[si].x-points[si-1].x)*0.4;
+    linePath+=' C'+cpx1+','+points[si-1].y+' '+cpx2+','+points[si].y+' '+points[si].x+','+points[si].y;
+  }
+  var areaPath=linePath+' L'+points[points.length-1].x+','+(padT+chartH)+' L'+points[0].x+','+(padT+chartH)+' Z';
+  // Grid lines
+  var gridLines='';var gridLabels='';
+  for(var gi=0;gi<=4;gi++){
+    var gy=padT+(gi/4)*chartH;
+    var gVal=Math.round(maxV*(1-gi/4));
+    gridLines+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(svgW-padR)+'" y2="'+gy+'" stroke="var(--border)" stroke-dasharray="3,3"/>';
+    gridLabels+='<text x="'+(padL-8)+'" y="'+(gy+3)+'" text-anchor="end" fill="var(--muted)" font-size="9">'+fmt(gVal)+'</text>';
+  }
+  // Month labels
+  var mLabels='';
+  for(var mi=0;mi<6;mi++){
+    mLabels+='<text x="'+points[mi].x+'" y="'+(svgH-8)+'" text-anchor="middle" fill="'+(mi===5?'var(--text)':'var(--muted)')+'" font-size="10" font-weight="'+(mi===5?'700':'400')+'">'+last6[mi].m.slice(0,3)+'</text>';
+  }
+  // Dots + value labels
+  var dotsSvg='';
+  for(var di=0;di<points.length;di++){
+    var isLast=di===points.length-1;
+    var dotCol=isLast?'#22d3a0':'#4f8ef7';
+    dotsSvg+='<circle cx="'+points[di].x+'" cy="'+points[di].y+'" r="'+(isLast?5:3.5)+'" fill="'+dotCol+'" stroke="var(--s1)" stroke-width="2"/>';
+    if(points[di].v>0){
+      dotsSvg+='<text x="'+points[di].x+'" y="'+(points[di].y-10)+'" text-anchor="middle" fill="'+(isLast?'#22d3a0':'var(--muted2)')+'" font-size="'+(isLast?'11':'9')+'" font-weight="'+(isLast?'800':'500')+'">'+fmt(points[di].v)+'</text>';
+    }
+  }
+  var gradId='dashAreaGrad'+Date.now();
+  $('dash-chart').innerHTML=''
+    +'<svg width="100%" height="100%" viewBox="0 0 '+svgW+' '+svgH+'" preserveAspectRatio="xMidYMid meet" style="overflow:visible">'
+    +'<defs>'
+    +'<linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#4f8ef7" stop-opacity="0.35"/>'
+    +'<stop offset="100%" stop-color="#4f8ef7" stop-opacity="0.02"/>'
+    +'</linearGradient>'
+    +'</defs>'
+    +gridLines+gridLabels+mLabels
+    +'<path d="'+areaPath+'" fill="url(#'+gradId+')" />'
+    +'<path d="'+linePath+'" fill="none" stroke="#4f8ef7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    +dotsSvg
+    +'</svg>';
+
+  // ── SVG Donut Chart: Categorias ──
+  var catData=['Infantil','Juvenil','Adulto'].map(function(c){
+    var n=act.filter(function(a){return a.cat===c;}).length;
+    var pct=act.length?Math.round(n/act.length*100):0;
+    var ingrCat=pm.filter(function(p){return act.some(function(a){return a.nombre===p.alumno&&a.cat===c;});}).reduce(function(s,p){return s+p.total;},0);
+    return{cat:c,n:n,pct:pct,ingr:ingrCat};
+  });
+  var donutR=55;var donutStroke=14;var donutC=2*Math.PI*donutR;
+  var catColors={Infantil:'#4ade80',Juvenil:'#60a5fa',Adulto:'#f472b6'};
+  var donutArcs='';var donutOffset=0;
+  catData.forEach(function(c){
+    var seg=(c.pct/100)*donutC;
+    donutArcs+='<circle cx="70" cy="70" r="'+donutR+'" fill="none" '
+      +'stroke="'+catColors[c.cat]+'" stroke-width="'+donutStroke+'" '
+      +'stroke-dasharray="'+seg+' '+(donutC-seg)+'" '
+      +'stroke-dashoffset="-'+donutOffset+'" '
+      +'transform="rotate(-90 70 70)" stroke-linecap="round" style="transition:stroke-dasharray .6s,stroke-dashoffset .6s"/>';
+    donutOffset+=seg;
+  });
+  var donutSvg='<svg width="140" height="140" viewBox="0 0 140 140">'
+    +'<circle cx="70" cy="70" r="'+donutR+'" fill="none" stroke="var(--s3)" stroke-width="'+donutStroke+'"/>'
+    +donutArcs
+    +'<text x="70" y="64" text-anchor="middle" fill="var(--text)" font-family="Syne,sans-serif" font-weight="800" font-size="26">'+act.length+'</text>'
+    +'<text x="70" y="82" text-anchor="middle" fill="var(--muted2)" font-size="9">ACTIVOS</text>'
+    +'</svg>';
+  var catLegend='<div style="width:100%">';
+  catData.forEach(function(c){
+    catLegend+=''
+      +'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--s2);border-radius:10px;margin-bottom:6px;border-left:3px solid '+catColors[c.cat]+'">'
+      +'<div style="width:10px;height:10px;border-radius:50%;background:'+catColors[c.cat]+';flex-shrink:0"></div>'
+      +'<div style="flex:1">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-weight:700;font-size:12px;color:'+catColors[c.cat]+'">'+c.cat+'</span>'
+      +'<span style="font-size:18px;font-weight:800;color:var(--text)">'+c.n+'</span>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted2);margin-top:2px">'
+      +'<span>'+c.pct+'% del total</span>'
+      +'<span>'+fmt(c.ingr)+'</span>'
+      +'</div>'
+      +'</div></div>';
+  });
+  catLegend+='</div>';
+  $('dash-cats').innerHTML=donutSvg+catLegend;
+
+  // ── Coaches con mini radial ──
   var coaches={};
-  CLASES_LIST.forEach(function(g){var c=g.coach||'Sin coach';if(!coaches[c])coaches[c]={clases:0,alumnos:0,grupos:[]};coaches[c].clases+=((g.dias||[]).length||0);coaches[c].alumnos+=(g.alumnos||[]).length;coaches[c].grupos.push(g.nombre);});
-  var coachColors={'Carlos':'var(--acc)','Pedro':'var(--orange)','Daniela':'var(--pink)'};
+  CLASES_LIST.forEach(function(g){
+    var c=g.coach||'Sin coach';
+    if(!coaches[c])coaches[c]={clases:0,alumnos:0,grupos:[]};
+    coaches[c].clases+=((g.dias||[]).length||0);
+    coaches[c].alumnos+=(g.alumnos||[]).length;
+    coaches[c].grupos.push(g.nombre);
+  });
+  var coachColors={'Carlos':'#4f8ef7','Pedro':'#f59e0b','Daniela':'#f472b6'};
   var totalClasesCoach=Object.values(coaches).reduce(function(s,c){return s+c.clases;},0);
-  var coachHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">';
+  var coachHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">';
   Object.keys(coaches).forEach(function(name){
-    var c=coaches[name];var col=coachColors[name]||'var(--muted2)';
+    var c=coaches[name];var col=coachColors[name]||'#7a8fba';
     var pct=totalClasesCoach>0?Math.round(c.clases/totalClasesCoach*100):0;
-    coachHtml+='<div style="background:var(--s2);border-radius:10px;padding:12px;border-left:3px solid '+col+'">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-      +'<div style="font-size:13px;font-weight:800;color:'+col+'">'+name+'</div>'
-      +'<span style="font-size:9px;background:'+col+'22;color:'+col+';padding:2px 8px;border-radius:10px;font-weight:700">'+pct+'%</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">'
-      +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.clases+'</div><div style="font-size:8px;color:var(--muted2)">CLASES/SEM</div></div>'
-      +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.grupos.length+'</div><div style="font-size:8px;color:var(--muted2)">GRUPOS</div></div>'
-      +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.alumnos+'</div><div style="font-size:8px;color:var(--muted2)">ALUMNOS</div></div></div>'
-      +'<div style="background:var(--s3);border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:4px"></div></div>'
-      +'</div>';
+    var miniR=22;var miniC=2*Math.PI*miniR;var miniOff=miniC-(pct/100)*miniC;
+    coachHtml+=''
+      +'<div style="background:var(--s2);border-radius:12px;padding:14px;border:1px solid var(--border);position:relative;overflow:hidden">'
+      +'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,'+col+','+col+'88)"></div>'
+      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
+      +'<svg width="52" height="52" viewBox="0 0 52 52">'
+      +'<circle cx="26" cy="26" r="'+miniR+'" fill="none" stroke="var(--s3)" stroke-width="4"/>'
+      +'<circle cx="26" cy="26" r="'+miniR+'" fill="none" stroke="'+col+'" stroke-width="4" stroke-linecap="round" '
+      +'stroke-dasharray="'+miniC+'" stroke-dashoffset="'+miniOff+'" transform="rotate(-90 26 26)"/>'
+      +'<text x="26" y="29" text-anchor="middle" fill="'+col+'" font-size="11" font-weight="800">'+pct+'%</text>'
+      +'</svg>'
+      +'<div>'
+      +'<div style="font-family:Syne,sans-serif;font-size:14px;font-weight:800;color:'+col+'">'+name+'</div>'
+      +'<div style="font-size:9px;color:var(--muted2)">'+c.grupos.length+' grupo'+(c.grupos.length!==1?'s':'')+'</div>'
+      +'</div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">'
+      +'<div style="background:var(--s3);border-radius:8px;padding:8px 4px"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.clases+'</div><div style="font-size:7px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px">Clases/sem</div></div>'
+      +'<div style="background:var(--s3);border-radius:8px;padding:8px 4px"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.grupos.length+'</div><div style="font-size:7px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px">Grupos</div></div>'
+      +'<div style="background:var(--s3);border-radius:8px;padding:8px 4px"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.alumnos+'</div><div style="font-size:7px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px">Alumnos</div></div>'
+      +'</div></div>';
   });
   coachHtml+='</div>';
   $('dash-coaches').innerHTML=coachHtml;
 
-  $('dash-recent').innerHTML=[...DB.pagos].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,5).map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px"><div><div style="font-weight:500">${p.alumno}</div><div style="font-size:11px;color:var(--muted)">${p.mes} ${p.anio} . ${p.forma}</div></div><div style="color:var(--green);font-weight:600">${fmt(p.total)}</div></div>`).join('')||'<div style="color:var(--muted);text-align:center;padding:20px">Sin pagos</div>';
-  $('dash-pends').innerHTML=act.filter(a=>!pm.some(p=>p.alumno===a.nombre)).slice(0,6).map(a=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><div style="display:flex;align-items:center;gap:8px">${av(a.nombre,a.cat)}<span>${a.nombre}</span></div><span style="color:var(--orange)">${fmt(a.men)}</span></div>`).join('')||'<div style="color:var(--green);text-align:center;padding:20px">✓ Todos pagaron</div>';
+  // ── Ultimos pagos (styled) ──
+  var recentPagos=[].concat(DB.pagos).sort(function(a,b){return b.fecha.localeCompare(a.fecha);}).slice(0,6);
+  var formaIcons={Efectivo:'&#x1F4B5;',Transferencia:'&#x1F3E6;',Tarjeta:'&#x1F4B3;'};
+  $('dash-recent').innerHTML=recentPagos.map(function(p,idx){
+    var icon=formaIcons[p.forma]||'&#x1F4B0;';
+    var alumno=DB.alumnos.find(function(a){return a.nombre===p.alumno;});
+    var catCol=alumno?catColors[alumno.cat]||'var(--muted2)':'var(--muted2)';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;margin-bottom:4px;background:'+(idx%2===0?'var(--s2)':'transparent')+';transition:background .2s">'
+      +'<div style="width:32px;height:32px;border-radius:8px;background:rgba(34,211,160,.1);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+icon+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.alumno+'</div>'
+      +'<div style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px">'
+      +'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+catCol+'"></span>'
+      +p.mes+' '+p.anio+' &middot; '+p.forma+'</div>'
+      +'</div>'
+      +'<div style="font-size:13px;font-weight:800;color:var(--green);white-space:nowrap">'+fmt(p.total)+'</div>'
+      +'</div>';
+  }).join('')||'<div style="color:var(--muted);text-align:center;padding:30px;font-size:13px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block;margin:0 auto 8px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Sin pagos registrados</div>';
+
+  // ── Pendientes (styled) ──
+  var pendsList=act.filter(function(a){return !pm.some(function(p){return p.alumno===a.nombre;});}).slice(0,8);
+  $('dash-pends').innerHTML=pendsList.map(function(a,idx){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;margin-bottom:4px;background:'+(idx%2===0?'var(--s2)':'transparent')+'">'
+      +av(a.nombre,a.cat)
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+a.nombre+'</div>'
+      +'<div style="font-size:10px;color:var(--muted)">'+a.cat+'</div>'
+      +'</div>'
+      +'<div style="text-align:right">'
+      +'<div style="font-size:13px;font-weight:800;color:var(--orange)">'+fmt(a.men)+'</div>'
+      +'<div style="font-size:8px;color:var(--muted2);text-transform:uppercase">Pendiente</div>'
+      +'</div></div>';
+  }).join('')||'<div style="color:var(--green);text-align:center;padding:30px;font-size:13px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="display:block;margin:0 auto 8px"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Todos al corriente</div>';
 
   // ── Widget asistencia semanal ──
   renderDashAsistencia();
