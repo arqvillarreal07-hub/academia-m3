@@ -411,27 +411,47 @@ function saveCosto(){
 
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
+  <!-- Bienvenida -->
+  <div id="dash-welcome" style="margin-bottom:14px"></div>
+
+  <!-- Filtros de periodo -->
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-  <span style="font-size:11px;color:var(--muted);font-weight:600">VER:</span>
-  <button class="btn active" id="dash-per-mes" onclick="setDashPeriodo('mes',this)" style="font-size:11px">Mes actual</button>
-  <button class="btn" id="dash-per-trim" onclick="setDashPeriodo('trim',this)" style="font-size:11px">Trimestre</button>
-  <button class="btn" id="dash-per-anio" onclick="setDashPeriodo('anio',this)" style="font-size:11px">Año</button>
-  <select id="dash-mes-sel" onchange="renderDashboard()" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:11px;outline:none;margin-left:auto"></select>
-</div>
-<div class="kgrid c4" id="dash-kpis">
+    <span style="font-size:11px;color:var(--muted);font-weight:600">VER:</span>
+    <button class="btn active" id="dash-per-mes" onclick="setDashPeriodo('mes',this)" style="font-size:11px">Mes actual</button>
+    <button class="btn" id="dash-per-trim" onclick="setDashPeriodo('trim',this)" style="font-size:11px">Trimestre</button>
+    <button class="btn" id="dash-per-anio" onclick="setDashPeriodo('anio',this)" style="font-size:11px">Año</button>
+    <select id="dash-mes-sel" onchange="renderDashboard()" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:11px;outline:none;margin-left:auto"></select>
+  </div>
+
+  <!-- KPIs principales -->
+  <div class="kgrid c4" id="dash-kpis">
     <div class="kcard"><div class="skeleton" style="height:60px"></div></div>
     <div class="kcard"><div class="skeleton" style="height:60px"></div></div>
     <div class="kcard"><div class="skeleton" style="height:60px"></div></div>
     <div class="kcard"><div class="skeleton" style="height:60px"></div></div>
   </div>
+
+  <!-- Barra de cobranza -->
+  <div id="dash-cobranza" style="margin-bottom:12px"></div>
+
+  <!-- Gráficas: Ingresos + Categorías -->
   <div class="pgrid g2">
-    <div class="panel"><div class="ph"><div><div class="ph-title">💰 Ingresos por Mes</div><div class="ph-sub">Últimos 6 meses</div></div></div><div class="pb" id="dash-chart" style="height:150px;display:flex;align-items:flex-end;gap:6px;"></div></div>
+    <div class="panel"><div class="ph"><div><div class="ph-title">💰 Ingresos por Mes</div><div class="ph-sub">Últimos 6 meses</div></div></div><div class="pb" id="dash-chart" style="height:160px;display:flex;align-items:flex-end;gap:6px;"></div></div>
     <div class="panel"><div class="ph"><div class="ph-title">📊 Por Categoría</div></div><div class="pb" id="dash-cats"></div></div>
   </div>
+
+  <!-- Coaches -->
+  <div class="panel" style="margin-bottom:12px">
+    <div class="ph"><div class="ph-title">🎾 Clases por Coach</div></div>
+    <div class="pb" id="dash-coaches"></div>
+  </div>
+
+  <!-- Pagos + Pendientes + Asistencia -->
   <div class="pgrid g2e">
     <div class="panel"><div class="ph"><div class="ph-title">🕐 Últimos Pagos</div></div><div class="pb" id="dash-recent"></div></div>
     <div class="panel"><div class="ph"><div class="ph-title">⏳ Pendientes del Mes</div></div><div class="pb" id="dash-pends"></div></div>
   </div>
+
   <!-- Widget asistencia -->
   <div class="panel" id="dash-asist-panel" style="margin-top:12px">
     <div class="ph"><div class="ph-title">📅 Asistencia — Esta Semana</div><button class="btn sm" onclick="nav('dia',null)" style="font-size:10px">Ir al Panel del Día →</button></div>
@@ -484,6 +504,8 @@ function saveCosto(){
   <div class="toolbar" style="position:sticky;top:0;z-index:10;background:var(--bg);padding-bottom:8px">
     <div class="search-box" style="width:100%;max-width:100%"><span>🔍</span><input id="alu-search" placeholder="Buscar alumno..." oninput="renderAlumnos()" style="width:100%"></div>
     <button class="btn active" onclick="filterAlumnos('todos',this)">Todos</button>
+    <button class="btn" onclick="filterAlumnos('Activo',this)">✅ Activos</button>
+    <button class="btn" onclick="filterAlumnos('Inactivo',this)">⛔ Inactivos</button>
     <button class="btn" onclick="filterAlumnos('Infantil',this)">🟢 Infantil</button>
     <button class="btn" onclick="filterAlumnos('Juvenil',this)">🔵 Juvenil</button>
     <button class="btn" onclick="filterAlumnos('Adulto',this)">💗 Adulto</button>
@@ -1857,15 +1879,50 @@ function renderDashboard(){
   const meta=act.reduce((s,a)=>s+a.men,0)*(dashPeriodo==='anio'?12:dashPeriodo==='trim'?3:1);
   const pmMes=DB.pagos.filter(p=>p.mes===cm&&p.anio===cy);
   const pagados=act.filter(a=>pmMes.some(p=>p.alumno===a.nombre)).length;
+  // Bienvenida
+  var hoy=new Date();var hora=hoy.getHours();var saludo=hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches';
+  var fechaHoy=hoy.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  $('dash-welcome').innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div><div style="font-size:20px;font-weight:800">'+saludo+' 👋</div><div style="font-size:11px;color:var(--muted2)">Panel de control · Academia M3 / X3 Pádel</div></div><div style="font-size:11px;color:var(--muted2);text-align:right">'+fechaHoy+'</div></div>';
+
+  // KPIs con estilo mejorado
+  var inact=DB.alumnos.length-act.length;
+  var cobPct=meta>0?Math.round(cobrado/meta*100):0;
   $('dash-kpis').innerHTML=`
-    <div class="kcard"><div class="kl">Total Alumnos</div><div class="kv blue">${DB.alumnos.length}</div><div class="ks">${act.length} activos</div></div>
-    <div class="kcard g"><div class="kl">✅ Pagados ${cm}</div><div class="kv green">${pagados}</div><div class="ks">de ${act.length} activos</div></div>
-    <div class="kcard o"><div class="kl">⏳ Pendientes</div><div class="kv orange">${act.length-pagados}</div><div class="ks">sin pago ${cm}</div></div>
-    <div class="kcard p"><div class="kl">💰 ${periodoLabel}</div><div class="kv purple" style="font-size:22px">${fmt(cobrado)}</div><div class="ks">Meta: ${fmt(meta)}</div></div>`;
+    <div class="kcard" style="border-top:3px solid var(--acc)"><div class="kl">👥 Total Alumnos</div><div class="kv blue" style="font-size:30px">${DB.alumnos.length}</div><div class="ks"><span style="color:var(--green)">${act.length} activos</span> · <span style="color:var(--red)">${inact} inactivos</span></div></div>
+    <div class="kcard g" style="border-top:3px solid var(--green)"><div class="kl">✅ Pagados ${cm}</div><div class="kv green" style="font-size:30px">${pagados}</div><div class="ks">de ${act.length} activos · ${act.length>0?Math.round(pagados/act.length*100):0}%</div></div>
+    <div class="kcard o" style="border-top:3px solid var(--orange)"><div class="kl">⏳ Pendientes</div><div class="kv orange" style="font-size:30px">${act.length-pagados}</div><div class="ks">sin pago ${cm}</div></div>
+    <div class="kcard p" style="border-top:3px solid var(--acc2)"><div class="kl">💰 ${periodoLabel}</div><div class="kv purple" style="font-size:24px">${fmt(cobrado)}</div><div class="ks">Meta: ${fmt(meta)} · ${cobPct}%</div></div>`;
+
+  // Barra de cobranza
+  $('dash-cobranza').innerHTML='<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;color:var(--muted2)">Avance de cobranza '+cm+'</span><span style="font-size:10px;font-weight:700;color:var(--green)">'+cobPct+'%</span></div><div style="background:var(--s3);border-radius:6px;height:10px;overflow:hidden"><div style="height:100%;width:'+Math.min(cobPct,100)+'%;background:linear-gradient(90deg,var(--acc),var(--green));border-radius:6px;transition:width .5s"></div></div><div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--muted2)"><span>Cobrado: '+fmt(cobrado)+'</span><span>Meta: '+fmt(meta)+'</span></div></div>';
   const last6=[];for(let i=5;i>=0;i--){const d=new Date(cy,now.getMonth()-i,1);last6.push({m:MONTHS[d.getMonth()],y:d.getFullYear()});}
   const maxV=Math.max(...last6.map(({m,y})=>DB.pagos.filter(p=>p.mes===m&&p.anio===y).reduce((s,p)=>s+p.total,0)),1);
-  $('dash-chart').innerHTML=last6.map(({m,y})=>{const v=DB.pagos.filter(p=>p.mes===m&&p.anio===y).reduce((s,p)=>s+p.total,0);const h=Math.round(v/maxV*120);return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:10px;color:var(--green)">${v?fmt(v):''}</div><div style="width:100%;height:${h}px;background:linear-gradient(0deg,var(--acc),var(--acc2));border-radius:4px 4px 0 0;min-height:4px"></div><div style="font-size:10px;color:var(--muted)">${m.slice(0,3)}</div></div>`;}).join('');
-  $('dash-cats').innerHTML=['Infantil','Juvenil','Adulto'].map(c=>{const n=act.filter(a=>a.cat===c).length;const pct=act.length?Math.round(n/act.length*100):0;return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px"><span style="color:${catColor(c)};font-weight:600">${c}</span><span style="color:var(--muted)">${n} (${pct}%)</span></div><div class="pbar"><div class="pfill" style="width:${pct}%;background:${catColor(c)}"></div></div></div>`;}).join('');
+  $('dash-chart').innerHTML=last6.map(({m,y},idx)=>{const v=DB.pagos.filter(p=>p.mes===m&&p.anio===y).reduce((s,p)=>s+p.total,0);const h=Math.max(8,Math.round(v/maxV*130));const isMax=v===maxV&&v>0;return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer" title="${m} ${y}: ${fmt(v)}"><div style="font-size:10px;font-weight:${isMax?'800':'400'};color:${isMax?'var(--green)':'var(--muted2)'}">${v?fmt(v):''}</div><div style="width:100%;height:${h}px;background:linear-gradient(0deg,${isMax?'var(--green)':'var(--acc)'},${isMax?'#6BCB77':'var(--acc2)'});border-radius:6px 6px 0 0;min-height:4px;transition:height .3s;box-shadow:${isMax?'0 0 12px rgba(79,142,247,.3)':'none'}"></div><div style="font-size:10px;color:${idx===5?'var(--text)':'var(--muted)'};font-weight:${idx===5?'700':'400'}">${m.slice(0,3)}</div></div>`;}).join('');
+  var catData=['Infantil','Juvenil','Adulto'].map(c=>{var n=act.filter(a=>a.cat===c).length;var pct=act.length?Math.round(n/act.length*100):0;var ingrCat=DB.pagos.filter(p=>act.some(a=>a.nombre===p.alumno&&a.cat===c)).reduce((s,p)=>s+p.total,0);return{cat:c,n:n,pct:pct,ingr:ingrCat};});
+  $('dash-cats').innerHTML=catData.map(c=>`<div style="background:var(--s2);border-radius:10px;padding:10px 12px;margin-bottom:8px;border-left:3px solid ${catColor(c.cat)}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div><span style="color:${catColor(c.cat)};font-weight:800;font-size:13px">${c.cat}</span></div><span style="font-size:20px;font-weight:800;color:var(--text)">${c.n}</span></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted2);margin-bottom:4px"><span>${c.pct}% del total</span><span>${fmt(c.ingr)} cobrado</span></div><div class="pbar" style="height:6px"><div class="pfill" style="width:${c.pct}%;background:${catColor(c.cat)}"></div></div></div>`).join('');
+  // Clases por coach
+  var coaches={};
+  CLASES_LIST.forEach(function(g){var c=g.coach||'Sin coach';if(!coaches[c])coaches[c]={clases:0,alumnos:0,grupos:[]};coaches[c].clases+=((g.dias||[]).length||0);coaches[c].alumnos+=(g.alumnos||[]).length;coaches[c].grupos.push(g.nombre);});
+  var coachColors={'Carlos':'var(--acc)','Pedro':'var(--orange)','Daniela':'var(--pink)'};
+  var totalClasesCoach=Object.values(coaches).reduce(function(s,c){return s+c.clases;},0);
+  var coachHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">';
+  Object.keys(coaches).forEach(function(name){
+    var c=coaches[name];var col=coachColors[name]||'var(--muted2)';
+    var pct=totalClasesCoach>0?Math.round(c.clases/totalClasesCoach*100):0;
+    coachHtml+='<div style="background:var(--s2);border-radius:10px;padding:12px;border-left:3px solid '+col+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+      +'<div style="font-size:13px;font-weight:800;color:'+col+'">'+name+'</div>'
+      +'<span style="font-size:9px;background:'+col+'22;color:'+col+';padding:2px 8px;border-radius:10px;font-weight:700">'+pct+'%</span></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">'
+      +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.clases+'</div><div style="font-size:8px;color:var(--muted2)">CLASES/SEM</div></div>'
+      +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.grupos.length+'</div><div style="font-size:8px;color:var(--muted2)">GRUPOS</div></div>'
+      +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--text)">'+c.alumnos+'</div><div style="font-size:8px;color:var(--muted2)">ALUMNOS</div></div></div>'
+      +'<div style="background:var(--s3);border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:4px"></div></div>'
+      +'</div>';
+  });
+  coachHtml+='</div>';
+  $('dash-coaches').innerHTML=coachHtml;
+
   $('dash-recent').innerHTML=[...DB.pagos].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,5).map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px"><div><div style="font-weight:500">${p.alumno}</div><div style="font-size:11px;color:var(--muted)">${p.mes} ${p.anio} . ${p.forma}</div></div><div style="color:var(--green);font-weight:600">${fmt(p.total)}</div></div>`).join('')||'<div style="color:var(--muted);text-align:center;padding:20px">Sin pagos</div>';
   $('dash-pends').innerHTML=act.filter(a=>!pm.some(p=>p.alumno===a.nombre)).slice(0,6).map(a=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><div style="display:flex;align-items:center;gap:8px">${av(a.nombre,a.cat)}<span>${a.nombre}</span></div><span style="color:var(--orange)">${fmt(a.men)}</span></div>`).join('')||'<div style="color:var(--green);text-align:center;padding:20px">✓ Todos pagaron</div>';
 
@@ -1949,7 +2006,13 @@ let aluFilter='todos',editAluId=null;
 function filterAlumnos(f,el){aluFilter=f;document.querySelectorAll('#page-alumnos .btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderAlumnos();}
 function renderAlumnos(){
   const q=($('alu-search').value||'').toLowerCase();
-  const list=DB.alumnos.filter(a=>(aluFilter==='todos'||a.cat===aluFilter)&&(!q||a.nombre.toLowerCase().includes(q)||(a.tel||'').includes(q))).sort((a,b)=>{var da=a.fechaRegistro||'';var db=b.fechaRegistro||'';if(db!==da)return db.localeCompare(da);return (b.id||'').localeCompare(a.id||'');});
+  const list=DB.alumnos.filter(a=>{
+    if(aluFilter==='Activo'&&a.est!=='Activo')return false;
+    if(aluFilter==='Inactivo'&&a.est==='Activo')return false;
+    if(aluFilter!=='todos'&&aluFilter!=='Activo'&&aluFilter!=='Inactivo'&&a.cat!==aluFilter)return false;
+    if(q&&!a.nombre.toLowerCase().includes(q)&&!(a.tel||'').includes(q))return false;
+    return true;
+  }).sort((a,b)=>{var da=a.fechaRegistro||'';var db=b.fechaRegistro||'';if(db!==da)return db.localeCompare(da);return (b.id||'').localeCompare(a.id||'');});
   $('alu-tbody').innerHTML=list.map((a,i)=>{
     // Buscar grupos en CLASES_LIST
     var grupos = CLASES_LIST.filter(function(g){
