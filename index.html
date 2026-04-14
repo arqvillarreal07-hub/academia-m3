@@ -1508,16 +1508,46 @@ function showSaved(){const i=$('saveInd');i.classList.add('show');setTimeout(()=
 function loadData(){ /* datos precargados */ }
 
 
-// ── Nuevo Grupo ──
+// ── Nuevo / Editar Grupo ──
 var GRUPOS_NEW_KEY = 'x3_grupos_nuevos_v1';
+var GRUPOS_EDIT_KEY = 'x3_grupos_editados_v1';
+var editGrupoId = null;
 
 function abrirNuevoGrupo(){
+  editGrupoId = null;
+  document.getElementById('ng-mtitle').textContent = '➕ Nuevo Grupo';
+  document.getElementById('ng-btn-save').textContent = '✅ Crear Grupo';
+  document.getElementById('ng-btn-del').style.display = 'none';
   document.getElementById('ng-nombre').value='';
   document.getElementById('ng-cat').value='';
+  document.getElementById('ng-nivel').value='Principiante';
+  document.getElementById('ng-coach').value='Carlos';
   document.getElementById('ng-hora').value='';
-  document.getElementById('ng-precio').value='';
   document.getElementById('ng-cupo').value='6';
+  document.getElementById('ng-plan').value='2D';
   document.querySelectorAll('#ng-dias-btns .dia-btn').forEach(function(b){b.classList.remove('sel');});
+  openModal('modal-nuevo-grupo');
+}
+
+function editarGrupo(gid){
+  var g = CLASES_LIST.find(function(x){return x.id===gid;});
+  if(!g){ showToast('Grupo no encontrado','error'); return; }
+  editGrupoId = gid;
+  document.getElementById('ng-mtitle').textContent = '✏️ Editar Grupo';
+  document.getElementById('ng-btn-save').textContent = '💾 Guardar Cambios';
+  document.getElementById('ng-btn-del').style.display = '';
+  document.getElementById('ng-nombre').value = g.nombre || '';
+  document.getElementById('ng-cat').value = g.cat || '';
+  document.getElementById('ng-nivel').value = g.nivel || 'Principiante';
+  document.getElementById('ng-coach').value = g.coach || 'Carlos';
+  document.getElementById('ng-hora').value = g.hora || '';
+  document.getElementById('ng-cupo').value = g.cupo || 6;
+  document.getElementById('ng-plan').value = g.plan || '2D';
+  // Marcar días seleccionados
+  document.querySelectorAll('#ng-dias-btns .dia-btn').forEach(function(b){
+    if((g.dias||[]).indexOf(b.textContent.trim())!==-1) b.classList.add('sel');
+    else b.classList.remove('sel');
+  });
   openModal('modal-nuevo-grupo');
 }
 
@@ -1528,19 +1558,33 @@ function guardarNuevoGrupo(){
   var coach  = document.getElementById('ng-coach').value;
   var hora   = document.getElementById('ng-hora').value.trim();
   var cupo   = parseInt(document.getElementById('ng-cupo').value)||6;
-  var precio = parseFloat(document.getElementById('ng-precio').value)||0;
   var plan   = document.getElementById('ng-plan').value;
   var dias   = [];
   document.querySelectorAll('#ng-dias-btns .dia-btn.sel').forEach(function(b){dias.push(b.textContent.trim());});
 
   if(!nombre||!cat){ showToast('Completa nombre y categoría','error'); return; }
+  if(!hora){ showToast('Selecciona un horario','error'); return; }
+  if(dias.length===0){ showToast('Selecciona al menos un día','error'); return; }
 
-  // Nuevo ID: máximo existente + 1
+  if(editGrupoId!==null){
+    // EDITAR grupo existente
+    var idx = CLASES_LIST.findIndex(function(x){return x.id===editGrupoId;});
+    if(idx>=0){
+      var orig = CLASES_LIST[idx];
+      CLASES_LIST[idx] = {...orig, nombre, cat, nivel, coach, hora, cupo, plan, dias};
+      saveGrupoEditado(CLASES_LIST[idx]);
+      closeModal('modal-nuevo-grupo');
+      renderGrupos();
+      showToast('✅ Grupo actualizado','success');
+    }
+    return;
+  }
+
+  // CREAR nuevo
   var maxId = CLASES_LIST.reduce(function(mx,g){return g.id>mx?g.id:mx;},0);
-  var newGrupo = {id:maxId+1, cat:cat, nombre:nombre, nivel:nivel, coach:coach, dias:dias, hora:hora, alumnos:[], cupo:cupo, precio:precio, plan:plan};
+  var newGrupo = {id:maxId+1, cat:cat, nombre:nombre, nivel:nivel, coach:coach, dias:dias, hora:hora, alumnos:[], cupo:cupo, plan:plan};
   CLASES_LIST.push(newGrupo);
 
-  // Persistir grupos nuevos en localStorage
   try{
     var saved = JSON.parse(localStorage.getItem(GRUPOS_NEW_KEY)||'[]');
     saved.push(newGrupo);
@@ -1552,6 +1596,37 @@ function guardarNuevoGrupo(){
   showToast('✅ Grupo "'+nombre+'" creado','success');
 }
 
+function eliminarGrupoEditando(){
+  if(editGrupoId===null)return;
+  var g = CLASES_LIST.find(function(x){return x.id===editGrupoId;});
+  if(!g)return;
+  if(!confirm('¿Eliminar el grupo "'+g.nombre+'"? Los alumnos no se eliminarán, solo el grupo.'))return;
+  CLASES_LIST = CLASES_LIST.filter(function(x){return x.id!==editGrupoId;});
+  // Quitar del localStorage de nuevos
+  try{
+    var saved = JSON.parse(localStorage.getItem(GRUPOS_NEW_KEY)||'[]');
+    localStorage.setItem(GRUPOS_NEW_KEY, JSON.stringify(saved.filter(function(x){return x.id!==editGrupoId;})));
+  }catch(e){}
+  // Marcar como eliminado
+  try{
+    var del = JSON.parse(localStorage.getItem('x3_grupos_eliminados_v1')||'[]');
+    if(del.indexOf(editGrupoId)===-1) del.push(editGrupoId);
+    localStorage.setItem('x3_grupos_eliminados_v1', JSON.stringify(del));
+  }catch(e){}
+  editGrupoId = null;
+  closeModal('modal-nuevo-grupo');
+  renderGrupos();
+  showToast('🗑 Grupo eliminado','info');
+}
+
+function saveGrupoEditado(g){
+  try{
+    var edits = JSON.parse(localStorage.getItem(GRUPOS_EDIT_KEY)||'{}');
+    edits[g.id] = g;
+    localStorage.setItem(GRUPOS_EDIT_KEY, JSON.stringify(edits));
+  }catch(e){}
+}
+
 function loadGruposNuevos(){
   try{
     var saved = JSON.parse(localStorage.getItem(GRUPOS_NEW_KEY)||'[]');
@@ -1560,6 +1635,17 @@ function loadGruposNuevos(){
         CLASES_LIST.push(g);
       }
     });
+    // Aplicar ediciones guardadas
+    var edits = JSON.parse(localStorage.getItem(GRUPOS_EDIT_KEY)||'{}');
+    Object.keys(edits).forEach(function(id){
+      var idx = CLASES_LIST.findIndex(function(x){return x.id===parseInt(id);});
+      if(idx>=0) CLASES_LIST[idx] = {...CLASES_LIST[idx], ...edits[id]};
+    });
+    // Filtrar eliminados
+    var del = JSON.parse(localStorage.getItem('x3_grupos_eliminados_v1')||'[]');
+    if(del.length>0){
+      CLASES_LIST = CLASES_LIST.filter(function(x){return del.indexOf(x.id)===-1;});
+    }
   }catch(e){}
 }
 
@@ -3317,9 +3403,8 @@ function renderGrupos(){
 
           // Info fila
           '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px">'+
-            '<div style="font-size:12px">📅 <strong>'+c.dias.join(' . ')+'</strong> &nbsp;🕐 '+c.hora+'</div>'+
+            '<div style="font-size:12px">📅 <strong>'+c.dias.join(' · ')+'</strong> &nbsp;🕐 '+c.hora+'</div>'+
             '<div style="font-size:12px">👤 Coach <strong>'+c.coach+'</strong> &nbsp;📆 '+c.plan+'</div>'+
-            '<div style="font-size:12px">💰 <strong>$'+c.precio.toLocaleString()+'</strong>/mes</div>'+
           '</div>'+
 
           // Barra visual
@@ -3334,10 +3419,13 @@ function renderGrupos(){
           // Spots visuales grandes
           '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">'+spots+'</div>'+
 
-          // Acción
-          (st!=='lleno'?
-            '<button onclick="openInscribirGrupo('+c.id+')" style="width:100%;padding:9px;background:var(--acc);color:#fff;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s" onmouseenter="this.style.opacity=\'.85\'" onmouseleave="this.style.opacity=\'1\'">+ Inscribir alumno</button>':
-            '<button disabled style="width:100%;padding:9px;background:var(--s3);color:var(--muted);border:none;border-radius:9px;font-size:12px;font-family:inherit">🔒 Grupo lleno</button>')+
+          // Acciones
+          '<div style="display:flex;gap:6px">'+
+            (st!=='lleno'?
+              '<button onclick="openInscribirGrupo('+c.id+')" style="flex:1;padding:9px;background:var(--acc);color:#fff;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">+ Inscribir</button>':
+              '<button disabled style="flex:1;padding:9px;background:var(--s3);color:var(--muted);border:none;border-radius:9px;font-size:12px;font-family:inherit">🔒 Lleno</button>')+
+            '<button onclick="editarGrupo('+c.id+')" style="padding:9px 14px;background:rgba(79,142,247,.15);border:1px solid rgba(79,142,247,.3);color:var(--acc);border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" title="Editar grupo">✏️</button>'+
+          '</div>'+
 
         '</div>'+
       '</div>';
@@ -7453,11 +7541,11 @@ function confirmarImportarWA(){
   </div>
 </div>
 
-<!-- MODAL: NUEVO GRUPO -->
+<!-- MODAL: NUEVO / EDITAR GRUPO -->
 <div class="modal-bg" id="modal-nuevo-grupo">
   <div class="modal" style="max-width:480px">
     <div class="mh">
-      <div class="mh-title">➕ Nuevo Grupo</div>
+      <div class="mh-title" id="ng-mtitle">➕ Nuevo Grupo</div>
       <button class="btn sm" onclick="closeModal('modal-nuevo-grupo')">✕</button>
     </div>
     <div class="mb" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -7488,11 +7576,29 @@ function confirmarImportarWA(){
         </select>
       </div>
       <div class="fg">
-        <label>Horario</label>
-        <input id="ng-hora" class="fg-input" placeholder="Ej: 6:00–7:00pm">
+        <label>Horario *</label>
+        <select id="ng-hora" class="fg-input">
+          <option value="">— Seleccionar horario —</option>
+          <option value="6:00–7:00am">6:00–7:00am</option>
+          <option value="7:00–8:00am">7:00–8:00am</option>
+          <option value="8:00–9:00am">8:00–9:00am</option>
+          <option value="9:00–10:00am">9:00–10:00am</option>
+          <option value="10:00–11:00am">10:00–11:00am</option>
+          <option value="11:00am–12:00pm">11:00am–12:00pm</option>
+          <option value="12:00–1:00pm">12:00–1:00pm</option>
+          <option value="1:00–2:00pm">1:00–2:00pm</option>
+          <option value="2:00–3:00pm">2:00–3:00pm</option>
+          <option value="3:00–4:00pm">3:00–4:00pm</option>
+          <option value="4:00–5:00pm">4:00–5:00pm</option>
+          <option value="5:00–6:00pm">5:00–6:00pm</option>
+          <option value="6:00–7:00pm">6:00–7:00pm</option>
+          <option value="7:00–8:00pm">7:00–8:00pm</option>
+          <option value="8:00–9:00pm">8:00–9:00pm</option>
+          <option value="9:00–10:00pm">9:00–10:00pm</option>
+        </select>
       </div>
       <div class="fg" style="grid-column:1/-1">
-        <label>Días</label>
+        <label>Días *</label>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="ng-dias-btns">
           <div class="dia-btn" onclick="this.classList.toggle('sel')">Lun</div>
           <div class="dia-btn" onclick="this.classList.toggle('sel')">Mar</div>
@@ -7508,10 +7614,6 @@ function confirmarImportarWA(){
         <input id="ng-cupo" type="number" class="fg-input" value="6" min="1" max="20">
       </div>
       <div class="fg">
-        <label>Precio mensual ($)</label>
-        <input id="ng-precio" type="number" class="fg-input" placeholder="Ej: 1485">
-      </div>
-      <div class="fg">
         <label>Plan</label>
         <select id="ng-plan" class="fg-input">
           <option value="1D">1D — 1 día/sem</option>
@@ -7522,8 +7624,9 @@ function confirmarImportarWA(){
       </div>
     </div>
     <div class="mf">
+      <button class="btn" id="ng-btn-del" onclick="eliminarGrupoEditando()" style="background:rgba(240,79,79,.12);border:1px solid rgba(240,79,79,.3);color:var(--red);display:none">🗑 Eliminar</button>
       <button class="btn" onclick="closeModal('modal-nuevo-grupo')">Cancelar</button>
-      <button class="btn primary" onclick="guardarNuevoGrupo()">✅ Crear Grupo</button>
+      <button class="btn primary" id="ng-btn-save" onclick="guardarNuevoGrupo()">✅ Crear Grupo</button>
     </div>
   </div>
 </div>
