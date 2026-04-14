@@ -3240,16 +3240,8 @@ function grpFiltro(tipo, val, el){
 }
 
 function makeSpotFilled(col, cid, fullName, nom){
-  var d = document.createElement('div');
-  d.style.cssText='padding:3px 7px;height:28px;border-radius:7px;background:'+col+';display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:700;color:rgba(0,0,0,.75);white-space:nowrap;max-width:90px;overflow:hidden;margin:1px';
-  d.title=fullName;
-  d.innerHTML='👤 '+nom;
-  var x=document.createElement('span');
-  x.textContent='✕';
-  x.style.cssText='cursor:pointer;opacity:.7;margin-left:2px;font-size:10px';
-  x.onclick=function(e){e.stopPropagation();quitarDeGrupo(cid,fullName);};
-  d.appendChild(x);
-  return d.outerHTML;
+  var safeName = String(fullName).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  return '<div style="padding:3px 7px;height:28px;border-radius:7px;background:'+col+';display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:700;color:rgba(0,0,0,.75);white-space:nowrap;max-width:90px;overflow:hidden;margin:1px" title="'+safeName+'">👤 '+nom+'<span onclick="event.stopPropagation();quitarDeGrupo('+cid+',\''+safeName+'\')" style="cursor:pointer;opacity:.7;margin-left:2px;font-size:11px;padding:0 2px">✕</span></div>';
 }
 
 function quitarDeGrupo(gid, nombre){
