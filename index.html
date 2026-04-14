@@ -1665,7 +1665,9 @@ function loadClasesList(){
     if(!saved) return;
     saved.forEach(function(s){
       var g = CLASES_LIST.find(function(x){return x.id===s.id;});
-      if(g && s.alumnos && s.alumnos.length > 0) g.alumnos = s.alumnos;
+      // Aplicar SIEMPRE el array guardado (aunque este vacio)
+      // porque el usuario pudo haber eliminado alumnos intencionalmente
+      if(g && Array.isArray(s.alumnos)) g.alumnos = s.alumnos;
     });
   }catch(e){}
 }
