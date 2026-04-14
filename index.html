@@ -3511,7 +3511,7 @@ function openInscribirGrupo(gid){
     m = document.createElement('div');
     m.id = 'modal-inscribir-grupo';
     m.className = 'modal-bg';
-    m.innerHTML = '<div class="modal" style="max-width:460px"><div class="mh"><div class="mh-title">🎫 Inscribir Alumno</div><button class="btn sm" onclick="closeModal(\'modal-inscribir-grupo\')">✕</button></div><div class="mb"><div id="ig-info" style="background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px"></div><div class="fg"><label>Seleccionar Alumno</label><select class="fg-input" id="ig-alumno-sel" onchange="igOnSelChange()"><option value="">-- Elige de la lista --</option></select></div><div id="ig-nuevo-row" style="display:none"><div class="fg"><label>Nombre del nuevo alumno</label><input class="fg-input" id="ig-nombre-nuevo" placeholder="Nombre completo"></div></div><div class="fg"><label>Fecha de inicio</label><input type="date" class="fg-input" id="ig-fecha"></div><div class="fg"><label>Notas</label><textarea class="fg-input" style="height:60px" id="ig-notas" placeholder="Observaciones, descuentos especiales..."></textarea></div></div><div class="mf"><button class="btn" onclick="closeModal(\'modal-inscribir-grupo\')">Cancelar</button><button class="btn primary" onclick="confirmarInscripcion()">✅ Inscribir</button></div></div>';
+    m.innerHTML = '<div class="modal" style="max-width:420px"><div class="mh"><div class="mh-title">🎫 Inscribir Alumno</div><button class="btn sm" onclick="closeModal(\'modal-inscribir-grupo\')">✕</button></div><div class="mb"><div id="ig-info" style="background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px"></div><div class="fg"><label>Alumno</label><select class="fg-input" id="ig-alumno-sel" onchange="igOnSelChange()"><option value="">-- Elige de la lista --</option></select></div><div id="ig-nuevo-row" style="display:none"><div class="fg"><label>Nombre del nuevo alumno</label><input class="fg-input" id="ig-nombre-nuevo" placeholder="Nombre completo"></div></div></div><div class="mf"><button class="btn" onclick="closeModal(\'modal-inscribir-grupo\')">Cancelar</button><button class="btn primary" onclick="confirmarInscripcion()">✅ Inscribir</button></div></div>';
     document.body.appendChild(m);
   }
   window._igGrupoId = gid;
@@ -3542,8 +3542,6 @@ function openInscribirGrupo(gid){
   optNuevo.value = '__nuevo__';
   optNuevo.textContent = '+ Agregar nuevo alumno...';
   sel.appendChild(optNuevo);
-  document.getElementById('ig-fecha').value = todayStr();
-  document.getElementById('ig-notas').value = '';
   var nn = document.getElementById('ig-nombre-nuevo');
   if(nn) nn.value = '';
   m.classList.add('open');
@@ -3573,8 +3571,8 @@ function confirmarInscripcion(){
     nombre = selVal;
     if(!nombre){ showToast('Selecciona un alumno de la lista','error'); return; }
   }
-  var notas = ((document.getElementById('ig-notas')||{}).value||'').trim();
-  var fecha = (document.getElementById('ig-fecha')||{}).value || todayStr();
+  var notas = '';
+  var fecha = todayStr();
   if(gr){
     gr.alumnos = gr.alumnos || [];
     if(gr.alumnos.map(function(n){return n.toLowerCase();}).includes(nombre.toLowerCase())){
