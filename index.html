@@ -1580,9 +1580,16 @@ function guardarNuevoGrupo(){
     return;
   }
 
-  // CREAR nuevo
-  var maxId = CLASES_LIST.reduce(function(mx,g){return g.id>mx?g.id:mx;},0);
-  var newGrupo = {id:maxId+1, cat:cat, nombre:nombre, nivel:nivel, coach:coach, dias:dias, hora:hora, alumnos:[], cupo:cupo, plan:plan};
+  // CREAR nuevo — ID único con timestamp para evitar colisiones con IDs eliminados
+  var newId = 100000 + Date.now() % 1000000; // ID > 100000 para no chocar con hardcoded
+  // Asegurar que no existe ya y no esté en la lista de eliminados
+  try{
+    var delList = JSON.parse(localStorage.getItem('x3_grupos_eliminados_v1')||'[]');
+    while(CLASES_LIST.find(function(x){return x.id===newId;}) || delList.indexOf(newId)!==-1){
+      newId++;
+    }
+  }catch(e){}
+  var newGrupo = {id:newId, cat:cat, nombre:nombre, nivel:nivel, coach:coach, dias:dias, hora:hora, alumnos:[], cupo:cupo, plan:plan};
   CLASES_LIST.push(newGrupo);
 
   try{
@@ -1601,7 +1608,9 @@ function eliminarGrupoEditando(){
   var g = CLASES_LIST.find(function(x){return x.id===editGrupoId;});
   if(!g)return;
   if(!confirm('¿Eliminar el grupo "'+g.nombre+'"? Los alumnos no se eliminarán, solo el grupo.'))return;
-  CLASES_LIST = CLASES_LIST.filter(function(x){return x.id!==editGrupoId;});
+  // Usar splice para mantener la referencia del array
+  var idxDel=CLASES_LIST.findIndex(function(x){return x.id===editGrupoId;});
+  if(idxDel>=0)CLASES_LIST.splice(idxDel,1);
   // Quitar del localStorage de nuevos
   try{
     var saved = JSON.parse(localStorage.getItem(GRUPOS_NEW_KEY)||'[]');
@@ -1629,23 +1638,27 @@ function saveGrupoEditado(g){
 
 function loadGruposNuevos(){
   try{
+    // 1. Filtrar hardcoded eliminados PRIMERO (no afecta grupos nuevos del usuario)
+    var del = JSON.parse(localStorage.getItem('x3_grupos_eliminados_v1')||'[]');
+    if(del.length>0){
+      // Usar splice en lugar de reasignar para mantener la referencia del array
+      for(var i=CLASES_LIST.length-1;i>=0;i--){
+        if(del.indexOf(CLASES_LIST[i].id)!==-1) CLASES_LIST.splice(i,1);
+      }
+    }
+    // 2. Cargar grupos nuevos del usuario (estos siempre se cargan, no se filtran por 'eliminados')
     var saved = JSON.parse(localStorage.getItem(GRUPOS_NEW_KEY)||'[]');
     saved.forEach(function(g){
       if(!CLASES_LIST.find(function(x){return x.id===g.id;})){
         CLASES_LIST.push(g);
       }
     });
-    // Aplicar ediciones guardadas
+    // 3. Aplicar ediciones guardadas
     var edits = JSON.parse(localStorage.getItem(GRUPOS_EDIT_KEY)||'{}');
     Object.keys(edits).forEach(function(id){
       var idx = CLASES_LIST.findIndex(function(x){return x.id===parseInt(id);});
       if(idx>=0) CLASES_LIST[idx] = {...CLASES_LIST[idx], ...edits[id]};
     });
-    // Filtrar eliminados
-    var del = JSON.parse(localStorage.getItem('x3_grupos_eliminados_v1')||'[]');
-    if(del.length>0){
-      CLASES_LIST = CLASES_LIST.filter(function(x){return del.indexOf(x.id)===-1;});
-    }
   }catch(e){}
 }
 
